@@ -63,9 +63,13 @@ app.use(express.urlencoded({limit: '50mb', extended: true}));
 const guildId = "951559378354450483";
 const client = new DiscordBot.Client({intents: 3276799});
 client.login(process.env.DISCORD_TOKEN).then(() => {
-    discordBot.setupDiscordBot(guildId, client);
-    cronManager.registerCronJobs();
+    client.once('ready', () => {
+        // This code will execute only once when the client is ready
+        discordBot.setupDiscordBot(guildId, client);
+        cronManager.registerCronJobs();
+    });
 });
+
 
 /**
  * PASSPORT SETUP / SESSION HANDLING

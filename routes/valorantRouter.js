@@ -5,7 +5,6 @@ const {checkNotAuthenticated, permissionCheck} = require("../js/serverJS/session
 const {pool} = require("../js/serverJS/database/dbConfig");
 const {logMessage, LogLevel} = require('../js/serverJS/logger.js');
 const {getAccountInfo, getSummonerInfo, getSummonerIcon} = require("../js/serverJS/riot");
-const puppeteer = require('puppeteer');
 
 /**
  * GET route for getting the match history
@@ -71,7 +70,6 @@ async function getMatchHistory(riotName, riotTag, modes) {
 
     return modeAndJsonArray;
 }
-
 
 module.exports = {router, getMatchHistory, checkIfRiotIdValid}
 

@@ -1,5 +1,5 @@
 let playerCardCount = 0;
-let currentTimeFrame = 2;
+let currentTimeFrame = 14;
 
 /**
  * This function is called when the page is loaded.
@@ -115,6 +115,7 @@ async function buildPlayerCard(ownPlayerCard = false, riotId, order) {
     let winrate;
     let customColor;
     let rankedText;
+    let modesAndJsonArray;
     let matchHistory;
 
     try {
@@ -156,10 +157,11 @@ async function buildPlayerCard(ownPlayerCard = false, riotId, order) {
         const name = riotId.split('#')[0];
         const tag = riotId.split('#')[1];
         const days = currentTimeFrame;
-        matchHistory = await $.ajax({
+        const modes = ['RANKED_SOLO_5x5'];
+        modesAndJsonArray = await $.ajax({
             type: 'GET',
             url: '/league/getMatchHistory',
-            data: {name: name, tag: tag, days: days},
+            data: {name: name, tag: tag, days: days, modes: modes},
             success: function (data) {
                 return data;
             },
@@ -171,6 +173,7 @@ async function buildPlayerCard(ownPlayerCard = false, riotId, order) {
             }
         })
     }
+
 
     let mainMainContainer = $('<div>').addClass('flex w-64 flex-col gap-3 main');
     let mainContainer = $('<div>').addClass('relative bg-grey-level2 w-64 p-4');
@@ -201,9 +204,10 @@ async function buildPlayerCard(ownPlayerCard = false, riotId, order) {
 
     let matchPlayed = 0;
     let chmapionArray = [];
+    matchHistory = modesAndJsonArray[0][1];
     if (matchHistory){
-        matchPlayed = matchHistory.length;
-        chmapionArray = await getMostPlayedChampions(matchHistory);
+        matchPlayed = matchesPlayed(matchHistory, currentTimeFrame)
+        chmapionArray = await getMostPlayedChampions(matchHistory, riotId);
     }
 
     let soloQContainer = $('<div>').addClass('bg-grey-level2 w-64 p-2 flex flex-col');
@@ -241,56 +245,29 @@ async function buildPlayerCard(ownPlayerCard = false, riotId, order) {
 }
 
 /**
- * This function fetches the most played champions
+ * This function fetches the most played champions of a player
  * @param matchHistory
+ * @param riotId
+ * @returns {Promise<*[]>}
  */
-async function getMostPlayedChampions(matchHistory) {
-    // Count the occurrences of each champion_id in the matchHistory
+async function getMostPlayedChampions(matchHistory, riotId) {
+    // Count the occurrences of each championName in the matchHistory
     const championCount = matchHistory.reduce((acc, match) => {
-        const championId = match.myData.champion_id;
-        acc[championId] = (acc[championId] || 0) + 1;
+        const segment = match.segments.find(segment => segment.metadata.riotId === riotId);
+        if (segment) {
+            const championName = segment.metadata.championName;
+            acc[championName] = (acc[championName] || 0) + 1;
+        }
         return acc;
     }, {});
 
-    // Sort champion IDs by their play count
-    const sortedChampionIds = Object.entries(championCount)
+    // Sort champion names by their play count
+    const sortedChampionNames = Object.entries(championCount)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
-        .map(([championId, _]) => championId);
+        .map(([championName, _]) => championName);
 
-    // Fetch champion names for the top 3 (or fewer) champion IDs
-    const championNames = [];
-    for (let championId of sortedChampionIds) {
-        // Assuming fetchChampionNameById is a function that utilizes the route '/getChampionById' to fetch a champion's name by its ID
-        const championName = await fetchChampionNameById(championId);
-        championNames.push(championName);
-    }
-
-    return championNames;
-}
-
-/**
- * This function fetches the champion name by its ID
- * @param championId
- * @returns {Promise<*>}
- */
-async function fetchChampionNameById(championId) {
-    return new Promise((resolve, reject) => {
-        $.ajax({
-            type: 'GET',
-            url: '/league/getChampionById/' + championId,
-            success: function (data) {
-                resolve(data.name);
-            },
-            error: function (data) {
-                if (data.responseJSON && data.responseJSON.redirect) {
-                    window.location.href = data.responseJSON.redirect;
-                }
-                displayError(data.responseJSON.message);
-                reject(new Error('Error fetching champion name: ' + data.responseJSON.message));
-            }
-        })
-    });
+    return sortedChampionNames;
 }
 
 /**
@@ -315,6 +292,21 @@ function removePlayer(order, riotId) {
             displayError(data.responseJSON.message);
         }
     });
+}
+
+function matchesPlayed(matchHistory, timeFrame) {
+    let matches = 0;
+    for (let i = 0; i < matchHistory.length; i++) {
+        let date = new Date(matchHistory[i].metadata.timestamp);
+        let currentDate = new Date();
+        let diff = currentDate - date;
+        let diffDays = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        if (diffDays <= timeFrame) {
+            matches++;
+        }
+    }
+    return matches;
+
 }
 
 /**
