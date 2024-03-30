@@ -291,12 +291,31 @@ const sendMessageToChannel = async (channelId, message) => {
  * @returns {Promise<boolean>}
  */
 const doesUserExist = async (discordUsername) => {
+    // Function to wait until guilds cache is available
+    const waitForGuildsCache = () => {
+        return new Promise((resolve) => {
+            const checkGuildsCache = () => {
+                if (client.guilds.cache) {
+                    resolve();
+                }
+            };
+
+            const interval = setInterval(checkGuildsCache, 500); // Check every 1/2 second
+            checkGuildsCache(); // Check immediately
+        });
+    };
+
+    // Wait until guilds cache is available
+    await waitForGuildsCache();
+
+    // Now that guilds cache is available, proceed with the rest of the code
     let guild = client.guilds.cache.get(guildId);
     if (!guild) throw new Error('Invalid Guild ID or the bot is not a member of the guild.');
 
     const members = await guild.members.fetch();
     return members.some(member => member.user.username === discordUsername);
 };
+
 
 module.exports = {
     getCurrentDiscordMembers,

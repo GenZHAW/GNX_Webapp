@@ -21,7 +21,7 @@ router.get('/getDDragonData', permissionCheck('championpool', 'canOpen'), async 
 router.get('/getPlayerIcon', permissionCheck('lolstatspage', 'canOpen'), async (req, res) => {
     getAccountInfo(req.query.riotId).then((accountInfo) => {
         getSummonerInfo(accountInfo.data.puuid).then((summonerInfo) => {
-           res.status(200).send({icon: `https://ddragon.leagueoflegends.com/cdn/14.4.1/img/profileicon/${summonerInfo.summonerInfo.profileIconId}.png`});
+           res.status(200).send({icon: `https://ddragon.leagueoflegends.com/cdn/14.6.1/img/profileicon/${summonerInfo.summonerInfo.profileIconId}.png`});
         });
     }).catch((error) => {
         console.log(error);
@@ -182,14 +182,23 @@ async function getMatchHistory(riotName, riotTag, days, modes) {
             let currentDateInJson = latestDate;
 
             do {
-                const url = `https://api.tracker.gg/api/v2/lol/standard/matches/riot/${riotName}%23${riotTag}?region=EUW&type=&season=2024-01-10T01%3A00%3A00%2B00%3A00&playlist=${mode}&next=${nextMatches}`;
+                let url = `https://api.tracker.gg/api/v2/lol/standard/matches/riot/${riotName}%23${riotTag}?region=EUW&type=&season=2024-01-10T01%3A00%3A00%2B00%3A00&playlist=${mode}&next=${nextMatches}`;
+
                 const response = await fetch(url);
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status} for ${riotName}`);
                 }
 
-                const jsonData = await response.json();
+                const text = await response.text();
+
+                // Check if the response is not empty
+                if (text.trim() === '') {
+                    throw new Error('Empty response received from the API');
+                }
+
+
+                const jsonData = JSON.parse(text);
 
                 if (!jsonData.data || !jsonData.data.matches || jsonData.data.matches.length === 0) {
                     // No more matches available
@@ -217,9 +226,6 @@ async function getMatchHistory(riotName, riotTag, days, modes) {
     }
     return modeAndJsonArray;
 }
-
-
-
 
 /**
  * Inserts a champion into the championpool
