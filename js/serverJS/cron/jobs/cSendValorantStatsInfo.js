@@ -3,7 +3,7 @@
  */
 const valorantRouter = require('../../../../routes/valorantRouter');
 const {pool} = require('../../../serverJS/database/dbConfig.js');
-const {getMatchHistory, checkIfRiotIdValid} = require("../../../../routes/valorantRouter");
+const {getCondensedMatchHistory, checkIfRiotIdValid} = require("../../../../routes/valorantRouter");
 const discordBot = require('../../discordBot');
 const {sendMessageToChannel} = require("../../discordBot");
 
@@ -72,7 +72,7 @@ class cSendValorantStatsInfo {
                     discordBot.sendMessageToChannel(this.discordChannelId, message + this.msgDivider);
                     continue;
                 }
-                let modeAndJsonArray = await getMatchHistory(name, tag, this.modes);
+                let modeAndJsonArray = await getCondensedMatchHistory(name, tag, this.modes);
                 if (modeAndJsonArray) {
                     let modeStats = {}; // Object to store mode-wise stats for this player
                     // Initialize mode-wise stats
