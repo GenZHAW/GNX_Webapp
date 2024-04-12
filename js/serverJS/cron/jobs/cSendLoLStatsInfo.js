@@ -3,13 +3,19 @@
  */
 const leagueRouter = require('../../../../routes/leagueRouter');
 const {pool} = require('../../../serverJS/database/dbConfig.js');
-const {getMatchHistory} = require("../../../../routes/leagueRouter");
+const {getMatchHistory, getGamesPlayed} = require("../../../../routes/leagueRouter");
 const discordBot = require('../../discordBot');
+const {checkIfRiotIdValid, getCondensedMatchHistory} = require("../../../../routes/valorantRouter");
 
 class cSendLoLStatsInfo {
     discordChannelId = 0;
     teamId = 0;
     roleId = 0;
+    modes = ['RANKED_SOLO_5x5', 'RANKED_FLEX_SR'];
+    soloQGames = 0
+    flexGames = 0
+    amountOfDays = 7
+    msgDivider = "------------------------------------------------------------------------------------------------"
 
     /**
      * Sets the discord channel id
@@ -39,21 +45,120 @@ class cSendLoLStatsInfo {
      * This function is responsible for running the job
      */
     async execute() {
-        console.log("Sending weekly LoL games report...");
-
         const users = await this.getUsers();
         const currentWeek = this.getCurrentWeek();
-        let dataPromises = users.rows.map(user => {
-            return this.fetchMatchHistory(user.riotgames).then(response => {
-                return {user: user.username, data: response};
-            });
+
+        this.sendStartMessage(currentWeek);
+
+        for (const user of users.rows) {
+            let message = ""; // Initialize message string
+            const riotId = user.riotgames
+            if (!riotId) {
+                message += `**__Riot ID not found for ${user.username}__**\n`
+                discordBot.sendMessageToChannel(this.discordChannelId, message + this.msgDivider);
+                continue; // Skip this user if Riot ID is not found
+            }
+
+            const [name, tag] = riotId.split("#");
+            let isRiotIdValid = (await checkIfRiotIdValid(riotId)).isValid;
+            if (isRiotIdValid !== 'true'){
+                message += `**__Riot ID not is not valid for ${user.username} with riot id: ${user.riotgames}__**\n`
+                discordBot.sendMessageToChannel(this.discordChannelId, message + this.msgDivider);
+                continue;
+            }
+
+            let modeAndJsonArray = await getGamesPlayed(name, tag, this.modes);
+            if (modeAndJsonArray) {
+                let modeStats = {}; // Object to store mode-wise stats for this player
+                // Initialize mode-wise stats
+                this.modes.forEach(mode => {
+                    modeStats[mode] = { games: 0 }; // Initialize games to 0
+                });
+
+                // Calculate total games played for each mode
+                modeAndJsonArray.forEach(modeAndJson => {
+                    const mode = modeAndJson[0];
+                    const jsonData = modeAndJson[1];
+                    if (jsonData && jsonData.data && jsonData.data.heatmap) {
+                        const heatmapData = jsonData.data.heatmap;
+                        const totalGames = this.calculateTotalGames(heatmapData, this.amountOfDays); // Function to calculate total games
+                        // Update mode-wise stats
+                        modeStats[mode].games += totalGames;
+                    }
+                });
+
+                // Output mode-wise stats for this player
+                message += `**${riotId}:**\n`;
+                Object.keys(modeStats).forEach(mode => {
+                    message += `${mode}: ${modeStats[mode].games}\n`;
+                });
+
+                // Check requirements for this player
+                const soloQTotal = modeStats[this.modes[0]].games;
+                const flexTotal = modeStats[this.modes[1]].games;
+
+
+                let requirementsMet = true;
+                let unmetRequirements = [];
+
+                if (soloQTotal < this.soloQGames) {
+                    unmetRequirements.push(`**SoloQ :x: **`);
+                    requirementsMet = false;
+                }
+                if (flexTotal < this.flexGames) {
+                    unmetRequirements.push(`**FlexQ :x:**`);
+                    requirementsMet = false;
+                }
+
+                if (requirementsMet) {
+                    message += `**Congratulations! All requirements are met. Keep it up! :white_check_mark: :white_check_mark: **\n`;
+                } else {
+                    message += `*Not all requirements were met*:\n${unmetRequirements.join("\n")}\n`;
+                }
+            } else {
+                message += `Match history data not found for ${riotId}\n`;
+            }
+            // Send message to the Discord channel
+            discordBot.sendMessageToChannel(this.discordChannelId, message + this.msgDivider);
+        }
+        this.sendEndMessage()
+
+    } catch (error) {
+        console.error('Error initializing page:', error);
+    }
+
+    sendStartMessage(currentWeek){
+        let message = `🔥 **Week ${currentWeek} League of Legends Stats Report** 🔥\n\n`;
+        message += 'These are the requirements:\n'
+        message += `*15 Games, either SoloQ, Scrims, or Flex as 4+*\n`
+        discordBot.sendMessageToChannel(this.discordChannelId, message);
+    }
+
+    sendEndMessage(){
+        let message = `\nKeep it up <@&${this.roleId}>! :muscle:`;
+        discordBot.sendMessageToChannel(this.discordChannelId, message);
+    }
+
+    /**
+     * Calculate the wins and loses for the set amount of days
+     * @param heatmapData The match history data
+     * @param amountOfDays The amount of days to track
+     * @returns {{wins: number, losses: number}}
+     */
+    calculateTotalGames(heatmapData, amountOfDays) {
+        const currentDate = new Date();
+        let totalGames = 0;
+
+        heatmapData.forEach(data => {
+            const matchDate = new Date(data.date);
+            const timeDiff = currentDate - matchDate;
+            const diffDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+            if (diffDays <= amountOfDays) {
+                totalGames += data.values.matches;
+            }
         });
 
-        Promise.all(dataPromises).then(completedData => {
-            this.sendMessageToChannel(completedData, currentWeek);
-        }).catch(error => {
-            console.error("Error in the cSendLolStatsInfo cron:", error);
-        });
+        return totalGames;
     }
 
     /**

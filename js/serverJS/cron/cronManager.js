@@ -21,7 +21,7 @@ async function registerCronJobs() {
             const TaskClass = require(`./jobs/${cronJobDefinition.name}`);
             let taskInstance = new TaskClass(cronJob);
             taskInstance = setTaskParams(taskInstance, cronJob, cronJobDefinition.name)
-            if(cronJobDefinition.name === 'cSendValorantStatsInfo'){
+            if(cronJobDefinition.name === 'cSendLoLStatsInfo'){
                 taskInstance.execute();
             }
             /*const scheduledTask = cron.schedule(cronJob.executioninterval, () => {
