@@ -4,6 +4,7 @@
 function initPage(){
     loadOpenGamedayReports()
     loadCurrentWebappVersion()
+    loadCronjobCount()
 }
 
 /**
@@ -15,6 +16,25 @@ function loadOpenGamedayReports(){
         url: '/gameday/getOpenResultCount',
         success: function(response) {
             $('#openGamedayReports').text(response.count);
+        },
+        error: function(data) {
+            if (data.responseJSON && data.responseJSON.redirect) {
+                window.location.href = data.responseJSON.redirect;
+            }
+            displayError(data.responseJSON.message);
+        }
+    });
+}
+
+/**
+ * Loads the count of running cronjobs
+ */
+function loadCronjobCount(){
+    $.ajax({
+        type: 'GET',
+        url: '/cronjob/getCount',
+        success: function(response) {
+            $('#activeJobs').text(response.count);
         },
         error: function(data) {
             if (data.responseJSON && data.responseJSON.redirect) {

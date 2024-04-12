@@ -17,7 +17,9 @@ const pages = [
     {id: "adminpanel", url: "/dashboard/adminpanel"},
     {id: "gamedayadmin", url: "/dashboard/gamedayadmin"},
     {id: "lolstats", url: "/dashboard/lolstats"},
+    {id: "valorantstats", url: "/dashboard/valorantstats"},
     {id: "patchnotes", url: "/dashboard/patchnotes"},
+    {id: "cronjob", url: "/dashboard/cronjob"},
 ];
 
 /**

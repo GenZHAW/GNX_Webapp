@@ -36,9 +36,16 @@ async function updateSubscriptionTable() {
                     });
 
                     const products = productsResponse.data;
-                    const subscriptionDefinition = await pool.query('SELECT id FROM subscriptiondefinition WHERE wpproductid = $1', [products[0].product_id]);
+                    let subscriptionDefinition;
 
-                    await pool.query('INSERT INTO subscription (account_fk, wporderid, wpemail, paymentdate, nextpaymentdate, subscriptiondefinition_fk) VALUES ((SELECT id FROM account WHERE wpuserid = $1), $2, $3, $4, $5, $6)', [order.customer_id, order.id, order.billing_email, order.paid_date, order.next_payment, subscriptionDefinition.rows[0].id]);
+                    for (const product of products) {
+                        const result = await pool.query('SELECT id FROM subscriptiondefinition WHERE wpproductid = $1', [product.product_id]);
+                        if (result.rows.length > 0) {
+                            subscriptionDefinition = result.rows[0].id;
+                            break;
+                        }
+                    }
+                    await pool.query('INSERT INTO subscription (account_fk, wporderid, wpemail, paymentdate, nextpaymentdate, subscriptiondefinition_fk) VALUES ((SELECT id FROM account WHERE wpuserid = $1), $2, $3, $4, $5, $6)', [order.customer_id, order.id, order.billing_email, order.paid_date, order.next_payment, subscriptionDefinition]);
 
                 } catch (error) {
                     console.error(`Error fetching products for order ${order.id}: `, error);

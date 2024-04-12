@@ -55,10 +55,10 @@ async function getAccountInfo(riotId) {
         return {isValid: 'true', data: response.data};
     } catch (error) {
         if (error.response) {
-            if (error.response.status === 404 && error.response.data && error.response.data.status && error.response.data.status.message.includes('No results found for player with riot id')) {
+            if (error.response.status === 403 && error.response.data && error.response.data.status && error.response.data.status.message.includes('No results found for player with riot id')) {
                 return {isValid: 'false', message: 'No results found for player with riot id'};
             } else {
-                console.error('Error message:', error.message);
+                //console.error('Error message:', error.message);
                 return {isValid: 'false', message: 'There was an error processing your request.'};
             }
         } else {

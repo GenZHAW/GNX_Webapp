@@ -10,7 +10,7 @@ const {logMessage, LogLevel} = require('../js/serverJS/logger.js');
 /**
  * GET route for getting all teams
  */
-router.get('/getteams',  checkNotAuthenticated, permissionCheck('teammanagement', 'canOpen'), function (req, res) {
+router.get('/getteams',  checkNotAuthenticated, permissionCheck([{location: 'teammanagement', permission: 'canOpen'},{location: 'adminpanel', permission: 'canOpen'}]), function (req, res) {
     getTeams().then((result) => {
         res.status(200).send(result.rows);
     }).catch(() => {

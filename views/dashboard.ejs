@@ -101,6 +101,16 @@
                         <a class="text-almost-white font-semibold font-montserrat ml-4">LoL Statistics</a>
                     </div>
                 <% } %>
+
+                <% if (user.valorantstatspage && user.valorantstatspage.canOpen) { %>
+                    <div class="flex items-center w-full pl-4 py-4 group hover:bg-turquoise hover:bg-opacity-20 relative cursor-pointer"
+                         id="valorantstats">
+                        <div class="absolute left-0 w-1 bg-transparent group-hover:bg-turquoise h-full"
+                             id="valorantstats-line"></div>
+                        <img class="ml-4 w-[22px]" src="/res/icons/valorant_icon.png" alt="valorant icon"/>
+                        <a class="text-almost-white font-semibold font-montserrat ml-4">Valorant Statistics</a>
+                    </div>
+                <% } %>
                 <!--
             <% if (user.apexstats && user.apexstats.canOpen) { %>
                 <div class="flex items-center w-full pl-4 py-4 group hover:bg-turquoise hover:bg-opacity-20 relative cursor-pointer"

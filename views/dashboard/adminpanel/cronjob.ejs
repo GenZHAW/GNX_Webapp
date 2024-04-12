@@ -1,0 +1,67 @@
+<script src="/js/clientJS/adminpanel/cronjob.js"></script>
+
+<div class="bg-grey-level1 xl:pr-4 pr-4 px-4 md:px-8 py-6">
+    <h3 class="text-2xl mb-5 font-bold font-orbitron text-white">Cronjobs</h3>
+
+    <%- include('../../components/buttondefault', {type: 'button', id: 'newCronjob', text: 'Add new Cronjob', icon: 'ri-time-line', btnType: 'Success'}) %>
+
+    <!-- ADD NEW CRONJOB -->
+    <div class="bg-grey-level2 mt-4 p-4 hidden" id="addNewCronjob">
+        <h2 class="font-semibold font-montserrat text-lg text-almost-white">Add new Cronjob</h2>
+
+        <div class="flex flex-row gap-4 items-center mt-4">
+            <p>Choose Job Type:</p>
+            <%- include('../../components/dropdown', {id: 'jobType', options: [], width: 'w-72'}) %>
+        </div>
+
+        <div id="configGUI" class="hidden flex mt-4 flex-col">
+            <h2 class="font-semibold font-montserrat text-lg text-almost-white">Advanced Configuration</h2>
+
+            <p class="font-semibold font-montserrat text-md text-almost-white mt-4">Execution Interval</p>
+            <div class="flex flex-row mt-2 items-center gap-4">
+                <p>Minutes (0-59)</p>
+                <%- include('../../components/entryfield', {type: 'text', name: 'minutes', id: 'minutes', width: 'w-16', value: '*'}) %>
+                <p>Hours (0-23)</p>
+                <%- include('../../components/entryfield', {type: 'text', name: 'minutes', id: 'minutes', width: 'w-16', value: '*'}) %>
+                <p>Day of Month (1-31)</p>
+                <%- include('../../components/entryfield', {type: 'text', name: 'minutes', id: 'minutes', width: 'w-16', value: '*'}) %>
+                <p>Month (1-12)</p>
+                <%- include('../../components/entryfield', {type: 'text', name: 'minutes', id: 'minutes', width: 'w-16', value: '*'}) %>
+                <p>Day of Week (0-6)</p>
+                <%- include('../../components/entryfield', {type: 'text', name: 'minutes', id: 'minutes', width: 'w-16', value: '*'}) %>
+            </div>
+
+            <div id="configGUIContent" class="flex flex-col">
+
+            </div>
+            <div class="flex w-full mt-4 justify-end">
+                <%- include('../../components/buttondefault', {type: 'button', id: 'saveNewJob', text: 'Save Job', icon: 'ri-save-line', btnType: 'Success', width: 'w-40'}) %>
+            </div>
+        </div>
+    </div>
+
+    <!-- CRONJOB LIST -->
+    <div class="bg-grey-level2 mt-4 px-4 py-2">
+        <%- include('../../components/table', {id: 'cronTable', bodyId: 'cronData', headers: [{text: 'ID', width: '50px'}, {text: 'Type', width: '200px'}, {text: 'Interval', width: 'w-full'}, {text: 'Actions', width: '100px'}]}) %>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        initPage();
+
+        $("#jobType").change(function() {
+            let jobType = $(this).val();
+
+            buildConfigGUI(jobType)
+        });
+
+        $("#newCronjob").click(function() {
+            $("#addNewCronjob").toggleClass("hidden");
+        });
+
+        $("#saveNewJob").click(function() {
+            $("#addNewCronjob").toggleClass("hidden");
+        });
+    });
+</script>

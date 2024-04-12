@@ -29,6 +29,7 @@ const discordBotRouter = require('./routes/discordBotRouter.js');
 const discordBot = require('./js/serverJS/discordBot.js');
 const {checkAuthenticated} = require('./js/serverJS/sessionChecker.js');
 const leagueRouter = require('./routes/leagueRouter.js');
+const valorantRouter = require('./routes/valorantRouter.js');
 const calendarRouter = require('./routes/calendarRouter.js');
 const wooCommereceRouter = require('./routes/wooCommerceRouter.js');
 const patchnotesRouter = require('./routes/patchnotesRouter.js');
@@ -37,7 +38,9 @@ const {logMessage, LogLevel} = require('./js/serverJS/logger.js');
 const {sendTrainingDataReminders, sendGamedayReportReminder} = require("./js/serverJS/discordBot");
 const trainingNotesRouter = require("./routes/trainingNotesRouter");
 const gamedayRouter = require("./routes/gamedayRouter");
+const cronjobRouter = require("./routes/cronjobRouter");
 const {updateSubscriptionTable} = require("./js/serverJS/wooCommerceIntegration");
+const cronManager = require('./js/serverJS/cron/cronManager.js');
 
 /**
  * MIDDLEWARE
@@ -60,8 +63,13 @@ app.use(express.urlencoded({limit: '50mb', extended: true}));
 const guildId = "951559378354450483";
 const client = new DiscordBot.Client({intents: 3276799});
 client.login(process.env.DISCORD_TOKEN).then(() => {
-    discordBot.setupDiscordBot(guildId, client);
+    client.once('ready', () => {
+        // This code will execute only once when the client is ready
+        discordBot.setupDiscordBot(guildId, client);
+        cronManager.registerCronJobs();
+    });
 });
+
 
 /**
  * PASSPORT SETUP / SESSION HANDLING
@@ -95,7 +103,6 @@ cron.schedule('0 3 * * *', function() {
         }
     });
 });
-
 
 /**
  * WOO COMMERCE WEBHOOK
@@ -171,7 +178,8 @@ app.use('/roletype', roleTypeRouter);
 app.use('/teammembership', teammembershipRouter);
 app.use('/permission', permissionRouter);
 app.use('/discordbot', discordBotRouter(client, guildId));
-app.use('/league', leagueRouter);
+app.use('/valorant', valorantRouter.router);
+app.use('/league', leagueRouter.router);
 app.use('/logs', logRouter);
 app.use('/training', trainingRouter);
 app.use('/calendar', calendarRouter);
@@ -179,6 +187,7 @@ app.use('/wooCommerce', wooCommereceRouter);
 app.use('/trainingNotes', trainingNotesRouter);
 app.use('/patchnotes', patchnotesRouter);
 app.use('/gameday', gamedayRouter);
+app.use('/cronjob', cronjobRouter.router);
 
  /**
  * MAIN ROUTES

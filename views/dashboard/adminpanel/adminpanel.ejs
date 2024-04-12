@@ -9,7 +9,7 @@
              style="background: linear-gradient(to bottom right, #1E1F22, #2B2D30)">
             <h4 class="text-lg font-bold text-white pb-4">Gameday / Results</h4>
             <p class="font-montserrat text-almost-white font-bold text-sm">Current open gamedays</p>
-            <h3 class="text-success font-bold pt-2 text-center" style="font-size: 2.7rem" id="openGamedayReports">XXXX</h3>
+            <h3 class="text-success font-bold pt-2 text-center" style="font-size: 2.7rem" id="openGamedayReports">-</h3>
             <a href="#" id="openGamedayAdmin"
                class="sm:absolute sm:left-5 sm:bottom-4 text-turquoise text-base font-semibold flex items-center">Go to
                 Overview<i
@@ -20,9 +20,19 @@
              style="background: linear-gradient(to bottom right, #1E1F22, #2B2D30)">
             <h4 class="text-lg font-bold text-white pb-4">Patchnotes</h4>
             <p class="font-montserrat text-almost-white font-bold text-sm">Current Version</p>
-            <h3 class="text-success font-bold pt-2 text-center" style="font-size: 2.7rem" id="currentVersion">XXXX</h3>
+            <h3 class="text-success font-bold pt-2 text-center" style="font-size: 2.7rem" id="currentVersion">-<h3>
             <a href="#" id="openPatchNotes"
                class="sm:absolute sm:left-5 sm:bottom-4 text-turquoise text-base font-semibold flex items-center">Add new Patchnote<i
+                        class="text-turquoise ml-2 ri-arrow-right-s-fill"></i></a>
+        </div>
+
+        <div class="sm:relative shadow-shdaow2xl p-5 rounded-md w-60 sm:flex sm:flex-col"
+             style="background: linear-gradient(to bottom right, #1E1F22, #2B2D30)">
+            <h4 class="text-lg font-bold text-white pb-4">Cronjobs</h4>
+            <p class="font-montserrat text-almost-white font-bold text-sm">Active Jobs</p>
+            <h3 class="text-success font-bold pt-2 text-center" style="font-size: 2.7rem" id="activeJobs">-</h3>
+            <a href="#" id="openCronjobs"
+               class="sm:absolute sm:left-5 sm:bottom-4 text-turquoise text-base font-semibold flex items-center">Manage Cronjobs<i
                         class="text-turquoise ml-2 ri-arrow-right-s-fill"></i></a>
         </div>
     </div>
@@ -40,6 +50,11 @@
         $('#openPatchNotes').click(function (e) {
             e.preventDefault();
             loadPage('patchnotes')
+        });
+
+        $('#openCronjobs').click(function (e) {
+            e.preventDefault();
+            loadPage('cronjob')
         });
     });
 </script>

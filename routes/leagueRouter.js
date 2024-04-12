@@ -16,27 +16,12 @@ router.get('/getDDragonData', permissionCheck('championpool', 'canOpen'), async 
 });
 
 /**
- * GET champion name from id
- */
-router.get('/getChampionById/:id', permissionCheck('lolstatspage', 'canOpen'), async (req, res) => {
-    const championData = await riot.getDDragonDataFromProject();
-    const championId = req.params.id;
-    const champions = Object.values(championData.data);
-    const champion = champions.find(champ => champ.key === championId);
-    if (champion) {
-        res.json({ name: champion.id });
-    } else {
-        res.status(404).send('Champion not found');
-    }
-});
-
-/**
  * GET lol player icon
  */
 router.get('/getPlayerIcon', permissionCheck('lolstatspage', 'canOpen'), async (req, res) => {
     getAccountInfo(req.query.riotId).then((accountInfo) => {
         getSummonerInfo(accountInfo.data.puuid).then((summonerInfo) => {
-           res.status(200).send({icon: `https://ddragon.leagueoflegends.com/cdn/14.4.1/img/profileicon/${summonerInfo.summonerInfo.profileIconId}.png`});
+           res.status(200).send({icon: `https://ddragon.leagueoflegends.com/cdn/14.6.1/img/profileicon/${summonerInfo.summonerInfo.profileIconId}.png`});
         });
     }).catch((error) => {
         console.log(error);
@@ -75,71 +60,12 @@ router.get('/isRiotIdValid', permissionCheck('home', 'canOpen'), async (req, res
 router.get('/getMatchHistory', checkNotAuthenticated, permissionCheck('lolstatspage', 'canOpen'), async function (req, res) {
     const riotName = req.query.name
     const riotTag = req.query.tag
-    let latestDate = new Date();
-    latestDate.setDate(latestDate.getDate() - req.query.days);
+    const days = req.query.days
+    const modes = req.query.modes
 
-    const browser = await puppeteer.launch({ headless: false, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
-    const page = await browser.newPage();
-    await page.goto(`https://www.op.gg/summoners/euw/${riotName}-${riotTag}`);
+    const result = await getMatchHistory(riotName, riotTag, days, modes);
 
-    let dataParts = [];
-    let isOlder = false;
-    let responseCount = 0;
-
-    // Set up a response listener for the specific API endpoint
-    page.on('response', async (response) => {
-        if (response.url().startsWith('https://op.gg/api/v1.0/internal/bypass/games/euw/summoners/')) {
-            const json = await response.json();
-            dataParts.push(...json.data); // Flatten the data structure
-            responseCount++;
-
-            // Check if the latest game is older than the latestDate
-            const createdAt = new Date(json.data[json.data.length - 1].created_at);
-            if (createdAt < latestDate) {
-                isOlder = true;
-            }
-
-            // Before sending response, deduplicate dataParts by game.id
-            let uniqueGamesMap = new Map();
-            dataParts.forEach(game => {
-                uniqueGamesMap.set(game.id, game);
-            });
-            let uniqueDataParts = Array.from(uniqueGamesMap.values());
-
-            // Deduplicate and filter by date and SOLORANKED game type
-            let filteredAndDeduplicatedData = uniqueDataParts.filter(game => {
-                const gameDate = new Date(game.created_at);
-                return gameDate > latestDate && game.queue_info.game_type === 'SOLORANKED';
-            });
-
-            if (isOlder || responseCount > 10) {
-                await browser.close();
-
-                // Send deduplicated and filtered data
-                res.status(200).send(filteredAndDeduplicatedData);
-            } else {
-                // Check for more games if the "Show More" button is available
-                const loadMoreButton = await page.$('button.more');
-                if (loadMoreButton) {
-                    await loadMoreButton.click();
-                } else {
-                    // No more "Show More" button, so no more games to load
-                    await browser.close();
-
-                    res.status(200).send(filteredAndDeduplicatedData);
-                }
-            }
-        }
-    });
-
-    // Click the "Solo/Duo Ranked" button
-    try {
-        const selector = 'button[value="SOLORANKED"]';
-        await page.waitForSelector(selector);
-        await page.click(selector);
-    } catch {
-        console.log('Solo/Duo Ranked button not found');
-    }
+    res.status(200).send(result);
 });
 
 /**
@@ -241,6 +167,95 @@ router.post('/addChampion', checkNotAuthenticated, permissionCheck('championpool
         res.status(500).send({message: "There was an error adding the champion! Please try again later."});
     })
 });
+
+async function getGamesPlayed(riotName, riotTag, modes) {
+    const modeAndJsonArray = [];
+
+    for (const mode of modes) {
+        const url = `https://api.tracker.gg/api/v1/lol/matches/riot/${riotName}%23${riotTag}/aggregated?region=EUW&localOffset=-120&season=2024-01-10T01%3A00%3A00%2B00%3A00&playlist=${mode}`
+        try {
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const text = await response.text();
+
+            // Check if the response is not empty
+            if (text.trim() === '') {
+                throw new Error('Empty response received from the API');
+            }
+
+            const jsonData = JSON.parse(text);
+            modeAndJsonArray.push([mode, jsonData]);
+        } catch (error) {
+            console.error(`Error occurred while fetching match history for mode '${mode}':`, error);
+            // If an error occurs, push an array with mode and null to indicate failure
+            modeAndJsonArray.push([mode, null]);
+        }
+    }
+
+    return modeAndJsonArray;
+}
+async function getMatchHistory(riotName, riotTag, days, modes) {
+    const modeAndJsonArray = [];
+    const latestDate = new Date();
+    const oldestDate = new Date(latestDate);
+    oldestDate.setDate(oldestDate.getDate() - days);
+
+    for (const mode of modes) {
+        let nextMatches = 0;
+        let jsonArray = [];
+
+        try {
+            let currentDateInJson = latestDate;
+
+            do {
+                let url = `https://api.tracker.gg/api/v2/lol/standard/matches/riot/${riotName}%23${riotTag}?region=EUW&type=&season=2024-01-10T01%3A00%3A00%2B00%3A00&playlist=${mode}&next=${nextMatches}`;
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status} for ${riotName}`);
+                }
+
+                const text = await response.text();
+
+                // Check if the response is not empty
+                if (text.trim() === '') {
+                    throw new Error('Empty response received from the API');
+                }
+
+
+                const jsonData = JSON.parse(text);
+
+                if (!jsonData.data || !jsonData.data.matches || jsonData.data.matches.length === 0) {
+                    // No more matches available
+                    break;
+                }
+
+                jsonArray.push(jsonData.data.matches);
+
+                // Fetch matches until oldestDate is reached or beyond the specified days limit
+                if (jsonData.data.matches.length > 0) {
+                    const lastMatch = jsonData.data.matches[jsonData.data.matches.length - 1];
+                    currentDateInJson = new Date(lastMatch.metadata.timestamp);
+                }
+
+                // Calculate the next set of matches to fetch
+                nextMatches += 25;
+            } while (currentDateInJson > oldestDate);
+
+            modeAndJsonArray.push([mode, jsonArray.flat()]);
+        } catch (error) {
+            console.error(`Error occurred while fetching match history for mode '${mode}':`, error);
+            // Push null for this mode if an error occurs
+            modeAndJsonArray.push([mode, null]);
+        }
+    }
+    return modeAndJsonArray;
+}
 
 /**
  * Inserts a champion into the championpool
@@ -380,4 +395,4 @@ function deleteChampion(championpoolId) {
     `, [championpoolId]);
 }
 
-module.exports = router;
+module.exports = {router, getMatchHistory, getAccountInfo, getGamesPlayed};

@@ -39,7 +39,7 @@ async function initPage(userId, riotId) {
  * This function is called to build the content of the page
  */
 async function buildPage(riotId) {
-    const definition = await fetchLolstatsDefinitions();
+    const definition = await fetchValorantstatsDefinitions();
     let pagesetup = definition.pagesetup
 
     pagesetup = pagesetup.sort((a, b) => a.order - b.order);
@@ -59,13 +59,13 @@ async function buildPage(riotId) {
 }
 
 /**
- * This function fetches the definitions for the lolstats page
+ * This function fetches the definitions for the valorant stats page
  */
-function fetchLolstatsDefinitions() {
+function fetchValorantstatsDefinitions() {
     return new Promise((resolve, reject) => {
         $.ajax({
             type: 'GET',
-            url: '/league/getLolstatsDefinition',
+            url: '/valorant/getValorantstatsDefinition',
             success: function (data) {
                 resolve(data);
             },
@@ -74,7 +74,7 @@ function fetchLolstatsDefinitions() {
                     window.location.href = data.responseJSON.redirect;
                 }
                 displayError(data.responseJSON.message);
-                reject(new Error('Error fetching lolstats definitions: ' + data.responseJSON.message));
+                reject(new Error('Error fetching valorant stats definitions: ' + data.responseJSON.message));
             }
         });
     });
@@ -87,7 +87,7 @@ function checkIfRiotIdIsValid(riotId) {
     return new Promise((resolve, reject) => {
         $.ajax({
             type: 'GET',
-            url: '/league/isRiotIdValid',
+            url: '/valorant/isRiotIdValid',
             data: {riotId: riotId},
             success: function (data) {
                 if (data.isValid === 'true') {
@@ -239,7 +239,7 @@ async function buildPlayerCard(ownPlayerCard = false, riotId, order) {
     }
 
     mainMainContainer.append(mainContainer).append(soloQContainer.append(soloQText).append(soloQValue)).append(championsContainer.append(championsText).append(imgContainer))
-        //.append(lpGainContainer.append(lpGainText).append(lpGainValue));
+    //.append(lpGainContainer.append(lpGainText).append(lpGainValue));
 
     return mainMainContainer;
 }
@@ -309,24 +309,9 @@ function matchesPlayed(matchHistory, timeFrame) {
 
 }
 
-/**
- * Fetches the summoner icon from a player
- * @returns {Promise<unknown>}
- */
+//TODO look if possible to retrive
 function getSummonerIcon(riotId) {
-    return new Promise((resolve, reject) => {
-        $.ajax({
-            type: 'GET',
-            url: '/league/getPlayerIcon',
-            data: {riotId: riotId},
-            success: function (data) {
-                resolve(data);
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                reject(new Error('Error getting summoner icon: ' + textStatus));
-            }
-        });
-    });
+    return 'https://imgsvc.trackercdn.com/url/size(128),fit(cover)/https%3A%2F%2Ftitles.trackercdn.com%2Fvalorant-api%2Fplayercards%2F1f413062-4824-817f-d0c1-839a41f72108%2Fdisplayicon.png/image.jpg'
 }
 
 /**
