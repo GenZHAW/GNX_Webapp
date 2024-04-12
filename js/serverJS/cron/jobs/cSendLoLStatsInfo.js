@@ -215,7 +215,7 @@ class cSendLoLStatsInfo {
     getUsers(){
         return pool.query(`SELECT account.id, username, riotgames FROM account
                                             LEFT JOIN teammembership ON teammembership.account_fk = account.id
-                                            WHERE teammembership.team_fk=$1 AND teammembership.coach=0`, [this.teamId]   );
+                                            WHERE teammembership.team_fk=$1 AND teammembership.coach=0 AND teammembership.active=1`, [this.teamId]   );
     }
 }
 
