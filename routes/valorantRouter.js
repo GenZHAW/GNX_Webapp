@@ -11,7 +11,7 @@ const {getAccountInfo, getSummonerInfo, getSummonerIcon} = require("../js/server
  *
  * It returns a nested array with the mode and heatmap object
  */
-router.get('/getCondensedMatchHistory', checkNotAuthenticated, permissionCheck('home', 'canOpen'), async function (req, res) {
+router.get('/getCondensedMatchHistory', checkNotAuthenticated, permissionCheck('valorantstatspage', 'canOpen'), async function (req, res) {
     const riotName = req.query.name;
     const riotTag = req.query.tag;
     const modes = req.query.modes;
@@ -29,7 +29,7 @@ router.get('/getCondensedMatchHistory', checkNotAuthenticated, permissionCheck('
  *
  * It returns a nested array with the mode and heatmap object
  */
-router.get('/getMatchHistory', checkNotAuthenticated, permissionCheck('home', 'canOpen'), async function (req, res) {
+router.get('/getMatchHistory', checkNotAuthenticated, permissionCheck('valorantstatspage', 'canOpen'), async function (req, res) {
     const riotName = req.query.name;
     const riotTag = req.query.tag;
     const modes = req.query.modes;
@@ -46,19 +46,19 @@ router.get('/getMatchHistory', checkNotAuthenticated, permissionCheck('home', 'c
 /**
  * GET route for getting the valorantstats page definition of a user
  */
-router.get('/getValorantstatsDefinition',  checkNotAuthenticated, permissionCheck('lolstatspage', 'canOpen'), function (req, res) {
+router.get('/getValorantstatsDefinition',  checkNotAuthenticated, permissionCheck('valorantstatspage', 'canOpen'), function (req, res) {
     getValorantStatsConfig(req.user).then((result) => {
         res.status(200).send(result.rows[0]);
     }).catch((err) => {
         console.log(err);
-        res.status(500).send({message: "There was an error getting the lolstats config."});
+        res.status(500).send({message: "There was an error getting the valorantstats config."});
     });
 });
 
 /**
  * GET route to check if a riot id is valid
  */
-router.get('/isRiotIdValid', permissionCheck('home', 'canOpen'), async (req, res) => {
+router.get('/isRiotIdValid', permissionCheck('valorantstatspage', 'canOpen'), async (req, res) => {
     getAccountInfo(req.query.riotId).then((result) => {
         res.status(200).send(result);
     }).catch(() => {

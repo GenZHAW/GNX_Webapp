@@ -102,7 +102,7 @@
                     </div>
                 <% } %>
 
-                <% if (true) { %>
+                <% if (user.valorantstatspage && user.valorantstatspage.canOpen) { %>
                     <div class="flex items-center w-full pl-4 py-4 group hover:bg-turquoise hover:bg-opacity-20 relative cursor-pointer"
                          id="valorantstats">
                         <div class="absolute left-0 w-1 bg-transparent group-hover:bg-turquoise h-full"
@@ -215,7 +215,7 @@
             $("#menu").toggleClass("ri-menu-line ri-close-line");
         });
 
-        loadPage('cronjob')
+        loadPage('home1')
 
         $.ajax({
             url: '/discordbot/isDiscordNameValid',

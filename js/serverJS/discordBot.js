@@ -292,12 +292,16 @@ const sendMessageToChannel = async (channelId, message) => {
  */
 const doesUserExist = async (discordUsername) => {
     // Function to wait until guilds cache is available
+    let counter = 0;
+
     const waitForGuildsCache = () => {
         return new Promise((resolve) => {
             const checkGuildsCache = () => {
-                if (client.guilds.cache) {
+                if (client.guilds.cache || counter >= 20) {
+                    clearInterval(interval);
                     resolve();
                 }
+                counter++;
             };
 
             const interval = setInterval(checkGuildsCache, 500); // Check every 1/2 second

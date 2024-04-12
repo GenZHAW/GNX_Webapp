@@ -21,16 +21,14 @@ async function registerCronJobs() {
             const TaskClass = require(`./jobs/${cronJobDefinition.name}`);
             let taskInstance = new TaskClass(cronJob);
             taskInstance = setTaskParams(taskInstance, cronJob, cronJobDefinition.name)
-            if(cronJobDefinition.name === 'cSendLoLStatsInfo'){
-                taskInstance.execute();
-            }
-            /*const scheduledTask = cron.schedule(cronJob.executioninterval, () => {
+
+            const scheduledTask = cron.schedule(cronJob.executioninterval, () => {
                 taskInstance.execute();
             }, {
                 scheduled: true
-            });*/
+            });
 
-            //taskList.push({id: id, name: cronJobDefinition.name, task: scheduledTask});
+            taskList.push({id: id, name: cronJobDefinition.name, task: scheduledTask});
             id++;
         }else{
             console.error(`Cronjob with id ${cronJob.cronjobdefinition_fk} does not exist!`)
@@ -56,7 +54,6 @@ function setTaskParams(taskClass, cronJob, cronJobName){
             taskClass.setDiscordChannelId(cronJob.discordchannelid);
             taskClass.setTeamId(cronJob.team_fk);
             taskClass.setRoleId(cronJob.discordroleid);
-            console.log(cronJob.discordroleid)
             break;
     }
 
