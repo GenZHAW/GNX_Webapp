@@ -189,6 +189,7 @@ app.use('/patchnotes', patchnotesRouter);
 app.use('/gameday', gamedayRouter);
 app.use('/cronjob', cronjobRouter.router);
 
+leagueRouter.getMatchHistory("DLS", "REAL", 7, "RANKED_SOLO_5x5")
  /**
  * MAIN ROUTES
  */
