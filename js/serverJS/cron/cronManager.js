@@ -4,7 +4,7 @@
 const cronJobRouter = require("../../../routes/cronjobRouter");
 const cron = require('node-cron');
 
-let availableCronJobs = [{name: 'cSendLoLStatsInfo', id: 1}, {name: 'cSendValorantStatsInfo', id: 3}];
+let availableCronJobs = [{name: 'cSendLoLStatsInfo', id: 1}, /*{name: 'cSendValorantStatsInfo', id: 3}*/];
 let taskList = [];
 
 /**
@@ -48,6 +48,9 @@ function setTaskParams(taskClass, cronJob, cronJobName){
             taskClass.setDiscordChannelId(cronJob.discordchannelid);
             taskClass.setTeamId(cronJob.team_fk);
             taskClass.setRoleId(cronJob.discordroleid);
+            taskClass.setTimeFrame(cronJob.timeframe);
+            taskClass.setMinSoloQGames(cronJob.minsoloqgames);
+            taskClass.setMinFlexQGames(cronJob.minflexqgames);
             break;
 
         case 'cSendValorantStatsInfo':

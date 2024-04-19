@@ -11,35 +11,11 @@ class cSendLoLStatsInfo {
     discordChannelId = 0;
     teamId = 0;
     roleId = 0;
+    timeFrame = 0;
+    minSoloQGames = 0;
+    minFlexQGames = 0
     modes = ['RANKED_SOLO_5x5', 'RANKED_FLEX_SR'];
-    soloQGames = 0
-    flexGames = 0
-    amountOfDays = 7
     msgDivider = "------------------------------------------------------------------------------------------------"
-
-    /**
-     * Sets the discord channel id
-     * @param discordChannelId
-     */
-     setDiscordChannelId(discordChannelId){
-        this.discordChannelId = discordChannelId;
-    }
-
-    /**
-     * Sets the team id
-     * @param teamId
-     */
-    setTeamId(teamId){
-        this.teamId = teamId;
-    }
-
-    /**
-     * Sets the role id which gets pinged by the message
-     * @param roleId
-     */
-    setRoleId(roleId){
-        this.roleId = roleId;
-    }
 
     /**
      * This function is responsible for running the job
@@ -59,72 +35,50 @@ class cSendLoLStatsInfo {
                 continue; // Skip this user if Riot ID is not found
             }
 
-            const [name, tag] = riotId.split("#");
-            let isRiotIdValid = (await checkIfRiotIdValid(riotId)).isValid;
-            if (isRiotIdValid !== 'true'){
+            discordBot.sendMessageToChannel(this.discordChannelId, message + this.msgDivider);
+
+            let soloQMatchHistory = await this.fetchMatchHistory(riotId, this.modes[0]);
+            let flexQMatchHistory = await this.fetchMatchHistory(riotId, this.modes[1]);
+
+            if((soloQMatchHistory || flexQMatchHistory) === 'Invalid Riot ID'){
                 message += `**__Riot ID not is not valid for ${user.username} with riot id: ${user.riotgames}__**\n`
                 discordBot.sendMessageToChannel(this.discordChannelId, message + this.msgDivider);
                 continue;
             }
 
-            let modeAndJsonArray = await getGamesPlayed(name, tag, this.modes);
-            if (modeAndJsonArray) {
-                let modeStats = {}; // Object to store mode-wise stats for this player
-                // Initialize mode-wise stats
-                this.modes.forEach(mode => {
-                    modeStats[mode] = { games: 0 }; // Initialize games to 0
-                });
+            let totalSoloQGames = this.calculateTotalGames(soloQMatchHistory);
+            let totalFlexQGames = this.calculateTotalGames(flexQMatchHistory);
 
-                // Calculate total games played for each mode
-                modeAndJsonArray.forEach(modeAndJson => {
-                    const mode = modeAndJson[0];
-                    const jsonData = modeAndJson[1];
-                    if (jsonData && jsonData.data && jsonData.data.heatmap) {
-                        const heatmapData = jsonData.data.heatmap;
-                        const totalGames = this.calculateTotalGames(heatmapData, this.amountOfDays); // Function to calculate total games
-                        // Update mode-wise stats
-                        modeStats[mode].games += totalGames;
-                    }
-                });
-
-                // Output mode-wise stats for this player
-                message += `**${riotId}:**\n`;
-                Object.keys(modeStats).forEach(mode => {
-                    message += `${mode}: ${modeStats[mode].games}\n`;
-                });
-
-                // Check requirements for this player
-                const soloQTotal = modeStats[this.modes[0]].games;
-                const flexTotal = modeStats[this.modes[1]].games;
-
-
-                let requirementsMet = true;
-                let unmetRequirements = [];
-
-                if (soloQTotal < this.soloQGames) {
-                    unmetRequirements.push(`**SoloQ :x: **`);
-                    requirementsMet = false;
-                }
-                if (flexTotal < this.flexGames) {
-                    unmetRequirements.push(`**FlexQ :x:**`);
-                    requirementsMet = false;
-                }
-
-                if (requirementsMet) {
-                    message += `**Congratulations! All requirements are met. Keep it up! :white_check_mark: :white_check_mark: **\n`;
-                } else {
-                    message += `*Not all requirements were met*:\n${unmetRequirements.join("\n")}\n`;
-                }
-            } else {
-                message += `Match history data not found for ${riotId}\n`;
-            }
-            // Send message to the Discord channel
+            message += "TotalGames" + totalSoloQGames + " " + totalFlexQGames
             discordBot.sendMessageToChannel(this.discordChannelId, message + this.msgDivider);
-        }
-        this.sendEndMessage()
 
-    } catch (error) {
-        console.error('Error initializing page:', error);
+
+            message += `**${riotId}:**\n`;
+            message += `${modes[0]}: ${totalSoloQGames}\n`;
+            message += `${modes[1]}: ${totalFlexQGames}\n`;
+
+            let requirementsMet = true;
+            let unmetRequirements = [];
+
+            if (totalSoloQGames < this.minSoloQGames) {
+                unmetRequirements.push(`**SoloQ :x: **`);
+                requirementsMet = false;
+            }
+            if (totalFlexQGames < this.minFlexQGames) {
+                unmetRequirements.push(`**FlexQ :x:**`);
+                requirementsMet = false;
+            }
+
+            if (requirementsMet) {
+                message += `**Congratulations! All requirements are met. Keep it up! :white_check_mark: :white_check_mark: **\n`;
+            } else {
+                message += `*Not all requirements were met*:\n${unmetRequirements.join("\n")}\n`;
+            }
+
+            discordBot.sendMessageToChannel(this.discordChannelId, message + this.msgDivider);
+
+            this.sendEndMessage()
+        }
     }
 
     sendStartMessage(currentWeek){
@@ -141,23 +95,21 @@ class cSendLoLStatsInfo {
 
     /**
      * Calculate the wins and loses for the set amount of days
-     * @param heatmapData The match history data
-     * @param amountOfDays The amount of days to track
-     * @returns {{wins: number, losses: number}}
+     * @returns {number}
+     * @param matchHistory
      */
-    calculateTotalGames(heatmapData, amountOfDays) {
+    calculateTotalGames(matchHistory) {
         const currentDate = new Date();
         let totalGames = 0;
 
-        heatmapData.forEach(data => {
-            const matchDate = new Date(data.date);
+        matchHistory.matches.forEach(match => {
+            const matchDate = new Date(match.metadata.timestamp);
             const timeDiff = currentDate - matchDate;
             const diffDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-            if (diffDays <= amountOfDays) {
-                totalGames += data.values.matches;
+            if (diffDays <= this.timeFrame) {
+                totalGames++;
             }
         });
-
         return totalGames;
     }
 
@@ -182,16 +134,19 @@ class cSendLoLStatsInfo {
     }
 
     /**
-     * Fetches the match history of a user
+     * Fetches the match history for a specific user
      * @param riotId
+     * @param days
+     * @param mode
+     * @returns {Promise<unknown>}
      */
-    fetchMatchHistory(riotId){
+    fetchMatchHistory(riotId, mode){
         return new Promise((resolve, reject) => {
             leagueRouter.getAccountInfo(riotId).then(async response => {
                 if (response.isValid === 'false') {
                     resolve('Invalid Riot ID');
                 } else {
-                    const result = await leagueRouter.getMatchHistory(riotId.split('#')[0], riotId.split('#')[1], 7)
+                    const result = await leagueRouter.getMatchHistory(riotId.split('#')[0], riotId.split('#')[1], this.timeFrame, mode)
                     resolve(result.length);
                 }
             });
@@ -217,6 +172,55 @@ class cSendLoLStatsInfo {
                                             LEFT JOIN teammembership ON teammembership.account_fk = account.id
                                             WHERE teammembership.team_fk=$1 AND teammembership.coach=0 AND teammembership.active=1`, [this.teamId]   );
     }
+
+    /**
+     * Sets the discord channel id
+     * @param discordChannelId
+     */
+    setDiscordChannelId(discordChannelId){
+        this.discordChannelId = discordChannelId;
+    }
+
+    /**
+     * Sets the team id
+     * @param teamId
+     */
+    setTeamId(teamId){
+        this.teamId = teamId;
+    }
+
+    /**
+     * Sets the role id which gets pinged by the message
+     * @param roleId
+     */
+    setRoleId(roleId){
+        this.roleId = roleId;
+    }
+
+    /**
+     * Sets the time frame in which the goal has to be achieved
+     * @param timeFrame
+     */
+    setTimeFrame(timeFrame){
+        this.timeFrame = timeFrame;
+    }
+
+    /**
+     * Sets the minimum amount of soloQ games that are required to achieve the goal
+     * @param minSoloQGames
+     */
+    setMinSoloQGames(minSoloQGames){
+        this.minSoloQGames = minSoloQGames;
+    }
+
+    /**
+     * Sets the minimum amount of FlexQ games that are required to achieve the goal
+     * @param minFlexQGames
+     */
+    setMinFlexQGames(minFlexQGames){
+        this.minSoloQGames = minFlexQGames;
+    }
+
 }
 
 module.exports = cSendLoLStatsInfo;

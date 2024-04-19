@@ -157,11 +157,11 @@ async function buildPlayerCard(ownPlayerCard = false, riotId, order) {
         const name = riotId.split('#')[0];
         const tag = riotId.split('#')[1];
         const days = currentTimeFrame;
-        const modes = ['RANKED_SOLO_5x5'];
+        const mode = 'RANKED_SOLO_5x5';
         modesAndJsonArray = await $.ajax({
             type: 'GET',
             url: '/league/getMatchHistory',
-            data: {name: name, tag: tag, days: days, modes: modes},
+            data: {name: name, tag: tag, days: days, mode: mode},
             success: function (data) {
                 return data;
             },
@@ -172,6 +172,8 @@ async function buildPlayerCard(ownPlayerCard = false, riotId, order) {
                 displayError(data.responseJSON.message);
             }
         })
+
+
     }
 
 

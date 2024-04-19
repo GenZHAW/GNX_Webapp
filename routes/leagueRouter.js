@@ -61,9 +61,9 @@ router.get('/getMatchHistory', checkNotAuthenticated, permissionCheck('lolstatsp
     const riotName = req.query.name
     const riotTag = req.query.tag
     const days = req.query.days
-    const modes = req.query.modes
+    const mode = req.query.mode
 
-    const result = await getMatchHistory(riotName, riotTag, days, modes);
+    const result = await getMatchHistory(riotName, riotTag, days, mode);
 
     res.status(200).send(result);
 });
@@ -198,64 +198,106 @@ async function getGamesPlayed(riotName, riotTag, modes) {
 
     return modeAndJsonArray;
 }
-async function getMatchHistory(riotName, riotTag, days, modes) {
-    const modeAndJsonArray = [];
+
+async function getMatchHistory(riotName, riotTag, days, mode) {
     const latestDate = new Date();
     const oldestDate = new Date(latestDate);
     oldestDate.setDate(oldestDate.getDate() - days);
+    let nextMatches = 0;
+    let currentDateInJson = latestDate;
+    let dataJson = [];
+    let loadedAllMatches = false;
 
-    for (const mode of modes) {
-        let nextMatches = 0;
-        let jsonArray = [];
-
-        try {
-            let currentDateInJson = latestDate;
-
-            do {
-                let url = `https://api.tracker.gg/api/v2/lol/standard/matches/riot/${riotName}%23${riotTag}?region=EUW&type=&season=2024-01-10T01%3A00%3A00%2B00%3A00&playlist=${mode}&next=${nextMatches}`;
-
-                const response = await fetch(url);
-
+    // Fetch matches until oldestDate is reached or beyond the specified days limit
+    while(!loadedAllMatches){
+        let url = `https://api.tracker.gg/api/v2/lol/standard/matches/riot/${riotName}%23${riotTag}?region=EUW&type=&season=2024-01-10T01%3A00%3A00%2B00%3A00&playlist=${mode}&next=${nextMatches}`;
+        fetch(url)
+            .then(response => {
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status} for ${riotName}`);
                 }
-
-                const text = await response.text();
-
-                // Check if the response is not empty
-                if (text.trim() === '') {
-                    throw new Error('Empty response received from the API');
+                return response.json();
+            })
+            .then(data => {
+                if(dataJson === []){
+                    dataJson.push(data)
                 }
-
-
-                const jsonData = JSON.parse(text);
-
-                if (!jsonData.data || !jsonData.data.matches || jsonData.data.matches.length === 0) {
-                    // No more matches available
-                    break;
+                else{
+                    dataJson.matches = [...dataJson.matches, ...data.matches];
                 }
+                const lastMatch = data.matches[data.matches.length - 1];
+                currentDateInJson = new Date(lastMatch.metadata.timestamp);
 
-                jsonArray.push(jsonData.data.matches);
-
-                // Fetch matches until oldestDate is reached or beyond the specified days limit
-                if (jsonData.data.matches.length > 0) {
-                    const lastMatch = jsonData.data.matches[jsonData.data.matches.length - 1];
-                    currentDateInJson = new Date(lastMatch.metadata.timestamp);
+                if(currentDateInJson < oldestDate){
+                    loadedAllMatches = true;
                 }
-
-                // Calculate the next set of matches to fetch
-                nextMatches += 25;
-            } while (currentDateInJson > oldestDate);
-
-            modeAndJsonArray.push([mode, jsonArray.flat()]);
-        } catch (error) {
-            console.error(`Error occurred while fetching match history for mode '${mode}':`, error);
-            // Push null for this mode if an error occurs
-            modeAndJsonArray.push([mode, null]);
-        }
+                else{
+                    nextMatches += 25;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
     }
-    return modeAndJsonArray;
 }
+// async function getMatchHistory(riotName, riotTag, days, modes) {
+//     const modeAndJsonArray = [];
+//     const latestDate = new Date();
+//     const oldestDate = new Date(latestDate);
+//     oldestDate.setDate(oldestDate.getDate() - days);
+//
+//     for (const mode of modes) {
+//         let nextMatches = 0;
+//         let jsonArray = [];
+//
+//         try {
+//             let currentDateInJson = latestDate;
+//
+//             do {
+//                 let url = `https://api.tracker.gg/api/v2/lol/standard/matches/riot/${riotName}%23${riotTag}?region=EUW&type=&season=2024-01-10T01%3A00%3A00%2B00%3A00&playlist=${mode}&next=${nextMatches}`;
+//
+//                 const response = await fetch(url);
+//
+//                 if (!response.ok) {
+//                     throw new Error(`HTTP error! Status: ${response.status} for ${riotName}`);
+//                 }
+//
+//                 const text = await response.text();
+//
+//                 // Check if the response is not empty
+//                 if (text.trim() === '') {
+//                     throw new Error('Empty response received from the API');
+//                 }
+//
+//
+//                 const jsonData = JSON.parse(text);
+//
+//                 if (!jsonData.data || !jsonData.data.matches || jsonData.data.matches.length === 0) {
+//                     // No more matches available
+//                     break;
+//                 }
+//
+//                 jsonArray.push(jsonData.data.matches);
+//
+//                 // Fetch matches until oldestDate is reached or beyond the specified days limit
+//                 if (jsonData.data.matches.length > 0) {
+//                     const lastMatch = jsonData.data.matches[jsonData.data.matches.length - 1];
+//                     currentDateInJson = new Date(lastMatch.metadata.timestamp);
+//                 }
+//
+//                 // Calculate the next set of matches to fetch
+//                 nextMatches += 25;
+//             } while (currentDateInJson > oldestDate);
+//
+//             modeAndJsonArray.push([mode, jsonArray.flat()]);
+//         } catch (error) {
+//             console.error(`Error occurred while fetching match history for mode '${mode}':`, error);
+//             // Push null for this mode if an error occurs
+//             modeAndJsonArray.push([mode, null]);
+//         }
+//     }
+//     return modeAndJsonArray;
+// }
 
 /**
  * Inserts a champion into the championpool
