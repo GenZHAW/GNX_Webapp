@@ -5,6 +5,7 @@ function initPage(){
     loadOpenGamedayReports()
     loadCurrentWebappVersion()
     loadCronjobCount()
+    loadActiveRegistrationCodeCount()
 }
 
 /**
@@ -54,6 +55,25 @@ function loadCurrentWebappVersion(){
         url: '/patchnotes/getCurrentVersion',
         success: function(response) {
             $('#currentVersion').text(response[0].version);
+        },
+        error: function(data) {
+            if (data.responseJSON && data.responseJSON.redirect) {
+                window.location.href = data.responseJSON.redirect;
+            }
+            displayError(data.responseJSON.message);
+        }
+    });
+}
+
+/**
+ * Loads the current webapp version
+ */
+function loadActiveRegistrationCodeCount(){
+    $.ajax({
+        url: '/registrationcode/getregistrationcodes',
+        type: 'GET',
+        success: function(response) {1
+            $('#activeRegistrationcodes').text(response.length);
         },
         error: function(data) {
             if (data.responseJSON && data.responseJSON.redirect) {

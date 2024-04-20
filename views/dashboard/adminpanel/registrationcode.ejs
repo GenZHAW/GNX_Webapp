@@ -1,1 +1,32 @@
 <script src="/js/clientJS/adminpanel/registrationcode.js"></script>
+
+<div class="bg-grey-level1 xl:pr-4 pr-4 px-4 md:px-8 py-6">
+    <h3 class="text-2xl mb-5 font-bold font-orbitron text-white">Registrationcodes</h3>
+
+    <%- include('../../components/buttondefault', {type: 'button', id: 'newRegistrationcode', text: 'Add new Registrationcode', icon: 'ri-time-line', btnType: 'Success'}) %>
+
+    <!-- ADD NEW Registrationcode -->
+    <div class="bg-grey-level2 mt-4 p-4 hidden" id="addNewRegistrationcode">
+        <h2 class="font-semibold font-montserrat text-lg text-almost-white">Add new Registrationcode</h2>
+
+        <div class="flex flex-row gap-4 items-center mt-4">
+            <p>Choose Team:</p>
+            <%- include('../../components/dropdown', {id: 'team', options: [], width: 'w-72'}) %>
+        </div>
+    </div>
+
+    <!-- CRONJOB LIST -->
+    <div class="bg-grey-level2 mt-4 px-4 py-2">
+        <%- include('../../components/table', {id: 'registrationcodeTable', bodyId: 'registrationcodeData', headers: [{text: 'Registrationcode', width: 'w-full'}, {text: 'Team', width: 'w-full'}, {text: 'Used', width: 'w-full'}, {text: 'Valid until', width: 'w-full'}, {text: 'Actions', width: '100px'}]}) %>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        initPage();
+
+        $("#newRegistrationcode").click(function() {
+            $("#addNewRegistrationcode").toggleClass("hidden");
+        });
+    });
+</script>

@@ -38,8 +38,6 @@ function buildTable(data){
         tr.append(tdId).append(tdType).append(tdInterval).append(tdButton.append(showInfo).append(runNow).append(del));
         tableBody.append(tr);
     });
-
-    console.log(data);
 }
 
 /**
