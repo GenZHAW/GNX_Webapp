@@ -16,10 +16,10 @@ function buildTable(data){
     data.forEach(function (element) {
         const tr = $("<tr></tr>");
         const tdCode = $("<td></td>").text(element.code)
-        const tdTeam = $("<td></td>").text(element.teamname);
-        const tdUsed = $("<td></td>").text(element.used === "Yes" ? "Inactive" : "Active")
+        const tdTeam = $("<td></td>").text(element.teamname).addClass("truncate");
+        const tdUsed = $("<td></td>").text(element.used === "Yes" ? "Inactive" : "Active").addClass("hidden md:block")
         tdUsed.addClass(element.used === "Yes" ? "text-error" : "text-success");
-        const tdValid = $("<td></td>").text(element.validuntil.split(',')[0])
+        const tdValid = $("<td></td>").addClass("hidden sm:table-cell").text(element.validuntil.split(',')[0])
         const tdButton = $("<td class='flex gap-2' ></td>");
         const enable = $("<a href='#' id='enable'><i class='ri-restart-line ri-lg text-turquoise'></i></a>")
             .click(function() {
@@ -56,6 +56,7 @@ function fillRegistrationcodeDropdown(){
         success: function (data) {
             let dropdown = $('#team');
             dropdown.empty();
+            dropdown.append(`<option value="undefined">Select a team</option>`);
             data.forEach(function (element) {
                 dropdown.append(`<option value="${element.id}">${element.displayname}</option>`);
             });
@@ -96,7 +97,6 @@ function generateRegistrationCode(teamId){
         $.ajax({
             url: '/registrationcode/generateNewRegistrationCode/' + teamId,
             type: 'POST',
-            dataType: "json",
             success: function (data) {
                 console.log("Registration code created");
                 resolve(); // Resolve the promise when the registration code is generated successfully
@@ -119,20 +119,18 @@ async function updateRegisterCode(code, valid){
     await $.ajax({
         url: "/registrationcode/updateRegistrationCode/" + code + "/" + valid,
         type: "POST",
-        dataType: "json",
         success: function (data) {
+            loadRegistrationCodes().then(function (data) {
+                buildTable(data)
+            });
 
+            displaySuccess("Registration code updated successfully")
         },
         error: function (data) {
             if (data.responseJSON && data.responseJSON.redirect) {
                 window.location.href = data.responseJSON.redirect;
             }
-            console.log("Error deactivating registration code:", data.responseJSON);
+            console.log("Error deactivating registration code:", data);
         }
-    });
-
-    //TODO doesnt work?
-    loadRegistrationCodes().then(function (data) {
-        buildTable(data)
     });
 }

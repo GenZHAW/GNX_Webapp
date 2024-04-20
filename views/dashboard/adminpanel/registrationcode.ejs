@@ -1,9 +1,10 @@
 <script src="/js/clientJS/adminpanel/registrationcode.js"></script>
 
 <div class="bg-grey-level1 xl:pr-4 pr-4 px-4 md:px-8 py-6">
-    <h3 class="text-2xl mb-5 font-bold font-orbitron text-white">Registrationcodes</h3>
-
-    <%- include('../../components/buttondefault', {type: 'button', id: 'newRegistrationcode', text: 'Add new Registrationcode', icon: 'ri-time-line', btnType: 'Success'}) %>
+    <div class="w-full md:flex md:justify-between items-center">
+        <h3 class="text-2xl mb-5 font-bold font-orbitron text-white">Registrationcodes</h3>
+        <%- include('../../components/buttondefault', {type: 'button', id: 'newRegistrationcode', text: 'Add new Registrationcode', icon: 'ri-time-line', btnType: 'Success'}) %>
+    </div>
 
     <!-- ADD NEW Registrationcode -->
     <div class="bg-grey-level2 mt-4 p-4 hidden" id="addNewRegistrationcode">
@@ -22,7 +23,7 @@
 
     <!-- CRONJOB LIST -->
     <div class="bg-grey-level2 mt-4 px-4 py-2">
-        <%- include('../../components/table', {id: 'registrationcodeTable', bodyId: 'registrationcodeData', headers: [{text: 'Code', width: 'w-full'}, {text: 'Team', width: 'w-full'}, {text: 'Status', width: 'w-full'}, {text: 'Valid until', width: 'w-full'}, {text: 'Actions', width: '100px'}]}) %>
+        <%- include('../../components/table', {id: 'registrationcodeTable', bodyId: 'registrationcodeData', headers: [{text: 'Code', width: 'w-full'}, {text: 'Team', width: 'w-full'}, {text: 'Status', width: 'w-full', display: 'md'}, {text: 'Valid until', width: 'w-full', display: 'sm'}, {text: 'Actions', width: '100px'}]}) %>
     </div>
 </div>
 
@@ -33,6 +34,7 @@
         $("#newRegistrationcode")
             .click(function() {
                 $("#addNewRegistrationcode").toggleClass("hidden");
+                $("#team").val('undefined');
         });
         $('#cancelNewRegistrationcode')
             .click(function() {
@@ -41,13 +43,18 @@
 
         $('#submitNewRegistrationcode')
             .click(function() {
+                if ($('#team').val() == "undefined") {
+                    displayError("Please select a team!")
+                    return;
+                }
+
                 generateRegistrationCode($('#team').val());
                 $("#addNewRegistrationcode").toggleClass("hidden");
+
+                loadRegistrationCodes().then(function (data) {
+                    buildTable(data)
+                });
             });
-        //TODO doesnt refresh
-        loadRegistrationCodes().then(function (data) {
-            buildTable(data)
-        });
 
     });
 </script>
