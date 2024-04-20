@@ -13,11 +13,16 @@
             <p>Choose Team:</p>
             <%- include('../../components/dropdown', {id: 'team', options: [], width: 'w-72'}) %>
         </div>
+
+        <div class="flex flex-row gap-4 items-center justify-end">
+            <%- include('../../components/buttondefault', {type: 'button', id: 'cancelNewRegistrationcode', text: 'Cancel', icon: 'ri-close-line', btnType: 'Error'}) %>
+            <%- include('../../components/buttondefault', {type: 'submit', id: 'submitNewRegistrationcode', text: 'Save', icon: 'ri-check-line', btnType: 'Success'}) %>
+        </div>
     </div>
 
     <!-- CRONJOB LIST -->
     <div class="bg-grey-level2 mt-4 px-4 py-2">
-        <%- include('../../components/table', {id: 'registrationcodeTable', bodyId: 'registrationcodeData', headers: [{text: 'Registrationcode', width: 'w-full'}, {text: 'Team', width: 'w-full'}, {text: 'Used', width: 'w-full'}, {text: 'Valid until', width: 'w-full'}, {text: 'Actions', width: '100px'}]}) %>
+        <%- include('../../components/table', {id: 'registrationcodeTable', bodyId: 'registrationcodeData', headers: [{text: 'Code', width: 'w-full'}, {text: 'Team', width: 'w-full'}, {text: 'Status', width: 'w-full'}, {text: 'Valid until', width: 'w-full'}, {text: 'Actions', width: '100px'}]}) %>
     </div>
 </div>
 
@@ -25,8 +30,24 @@
     $(document).ready(function() {
         initPage();
 
-        $("#newRegistrationcode").click(function() {
-            $("#addNewRegistrationcode").toggleClass("hidden");
+        $("#newRegistrationcode")
+            .click(function() {
+                $("#addNewRegistrationcode").toggleClass("hidden");
         });
+        $('#cancelNewRegistrationcode')
+            .click(function() {
+                $("#addNewRegistrationcode").toggleClass("hidden");
+            });
+
+        $('#submitNewRegistrationcode')
+            .click(function() {
+                generateRegistrationCode($('#team').val());
+                $("#addNewRegistrationcode").toggleClass("hidden");
+            });
+        //TODO doesnt refresh
+        loadRegistrationCodes().then(function (data) {
+            buildTable(data)
+        });
+
     });
 </script>

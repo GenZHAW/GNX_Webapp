@@ -17,13 +17,28 @@ function buildTable(data){
         const tr = $("<tr></tr>");
         const tdCode = $("<td></td>").text(element.code)
         const tdTeam = $("<td></td>").text(element.teamname);
-        const tdUsed = $("<td></td>").text(element.used)
-        const tdValid = $("<td></td>").text(element.validuntil)
+        const tdUsed = $("<td></td>").text(element.used === "Yes" ? "Inactive" : "Active")
+        tdUsed.addClass(element.used === "Yes" ? "text-error" : "text-success");
+        const tdValid = $("<td></td>").text(element.validuntil.split(',')[0])
         const tdButton = $("<td class='flex gap-2' ></td>");
-        const enable = $("<a href='#' id='enable'><i class='ri-restart-line ri-lg text-turquoise'></i></a>").click(function(){
-        });
-        const disable = $("<a href='#' id='disable'><i class='ri-stop-fill ri-lg text-error'></i></a>").click(function(){
-        });
+        const enable = $("<a href='#' id='enable'><i class='ri-restart-line ri-lg text-turquoise'></i></a>")
+            .click(function() {
+                updateRegisterCode(element.code, false);
+            });
+
+        const disable = $("<a href='#' id='disable'><i class='ri-stop-fill ri-lg text-error'></i></a>")
+            .click(function() {
+                updateRegisterCode(element.code, true);
+            });
+
+        // Determine which button to show
+        if (element.used === "Yes") {
+            disable.hide();
+            enable.show();
+        } else {
+            enable.hide();
+            disable.show();
+        }
 
         tr.append(tdCode).append(tdTeam).append(tdUsed).append(tdValid).append(tdButton.append(enable).append(disable));
         tableBody.append(tr);
@@ -94,5 +109,30 @@ function generateRegistrationCode(teamId){
                 reject(); // Reject the promise if there is an error generating the registration code
             }
         });
+    });
+}
+
+/**
+ * This method updates the registration code in the database
+ */
+async function updateRegisterCode(code, valid){
+    await $.ajax({
+        url: "/registrationcode/updateRegistrationCode/" + code + "/" + valid,
+        type: "POST",
+        dataType: "json",
+        success: function (data) {
+
+        },
+        error: function (data) {
+            if (data.responseJSON && data.responseJSON.redirect) {
+                window.location.href = data.responseJSON.redirect;
+            }
+            console.log("Error deactivating registration code:", data.responseJSON);
+        }
+    });
+
+    //TODO doesnt work?
+    loadRegistrationCodes().then(function (data) {
+        buildTable(data)
     });
 }
