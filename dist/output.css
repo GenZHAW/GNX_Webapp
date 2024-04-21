@@ -3638,10 +3638,6 @@ input:checked + .slider {
     display: table-cell;
   }
 
-  .sm\:table-row {
-    display: table-row;
-  }
-
   .sm\:h-16 {
     height: 4rem;
   }

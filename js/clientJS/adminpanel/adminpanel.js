@@ -6,6 +6,7 @@ function initPage(){
     loadCurrentWebappVersion()
     loadCronjobCount()
     loadActiveRegistrationCodeCount()
+    loadTeamCount()
 }
 
 /**
@@ -66,7 +67,7 @@ function loadCurrentWebappVersion(){
 }
 
 /**
- * Loads the current webapp version
+ * Loads the active registration code count
  */
 function loadActiveRegistrationCodeCount(){
     $.ajax({
@@ -74,6 +75,25 @@ function loadActiveRegistrationCodeCount(){
         type: 'GET',
         success: function(response) {1
             $('#activeRegistrationcodes').text(response.length);
+        },
+        error: function(data) {
+            if (data.responseJSON && data.responseJSON.redirect) {
+                window.location.href = data.responseJSON.redirect;
+            }
+            displayError(data.responseJSON.message);
+        }
+    });
+}
+
+/**
+ * Loads the team count
+ */
+function loadTeamCount(){
+    $.ajax({
+        url: '/team/getteams',
+        type: 'GET',
+        success: function(response) {1
+            $('#teamCount').text(response.length);
         },
         error: function(data) {
             if (data.responseJSON && data.responseJSON.redirect) {
