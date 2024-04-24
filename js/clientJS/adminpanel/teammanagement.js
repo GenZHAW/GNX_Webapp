@@ -162,82 +162,53 @@ function loadTeamTypes(){
     })
 }
 
+/**
+ * Sets up the create team popup
+ */
 function setupCreateTeamPopup() {
-    const popupCreateRole = new Popup("popup-containerCreateTeam");
+    const popupCreateTeam = new Popup("popup-containerCreateTeam");
 
     let renderedHtml = '';
     // Add a 'text' property to each item in the array so that the dropdown can display the name
-    const options = allTeamTypes.map(teamType => {
+    const optionsWithValues = allTeamTypes.map(teamType => {
         return {
             ...teamType,          // Spread to copy all existing properties
-            text: teamType.name   // Add new 'text' property, copying the value from 'name'
+            text: teamType.name,   // Add new 'text' property, copying the value from 'name'
+            value: teamType.id     // Add new 'value' property, copying the value from 'id'
         };
     });
+
+    // Convert optionsWithValues to a JSON string to be used in the fetchDropdown function
+    const optionsJson = JSON.stringify(optionsWithValues);
+
     $.when(
         fetchEntryField('text', 'teamname', 'teamName', 'w-52', ''),
-        fetchDropdown('teamType', 'w-52',JSON.stringify(options) , 'Select Team Type')
+        fetchDropdown('teamType', 'w-52',optionsJson , 'Select Team Type')
     ).then(function(field1, field2) {
         renderedHtml += `<label for="teamName" class="input-label">Name</label>`
         renderedHtml += field1[0];
         renderedHtml += `<label for="teamType" class="input-label">Description</label>`
         renderedHtml += field2[0];
 
-        popupCreateRole.displayInputPopupCustom("/res/others/plus.png", "Create Team", "Create", "btnCreateTeam", renderedHtml);
+        popupCreateTeam.displayInputPopupCustom("/res/others/plus.png", "Create Team", "Create", "btnCreateTeam", renderedHtml);
 
         $("#createTeam").click(function (e) {
             $("#teamName").val("");
             $("#teamType").val("");
-            popupCreateRole.open(e);
+            popupCreateTeam.open(e);
         });
 
         $(document).on('click', '#btnCreateTeam', function() {
-            createTeam(e, popupCreateRole)
-            console.log("Create Team");
-            popupCreateRole.close()
+            popupCreateTeam.close();
+            createTeam(popupCreateTeam)
         });
     });
 }
-
-function setupCreateTeamTypePopup() {
-    const popupCreateRole = new Popup("popup-containerCreateTeamType");
-
-    let renderedHtml = '';
-    // Add a 'text' property to each item in the array so that the dropdown can display the name
-    const options = allTeamTypes.map(teamType => {
-        return {
-            ...teamType,          // Spread to copy all existing properties
-            text: teamType.name   // Add new 'text' property, copying the value from 'name'
-        };
-    });
-    $.when(
-        fetchEntryField('text', 'teamtypedisplayname', 'teamTypeName', 'w-52', ''),
-        fetchEntryField('text', 'teamtypedisplayname', 'teamTypeDisplayName', 'w-52', ''),
-    ).then(function(field1, field2) {
-        renderedHtml += `<label for="teamTypeName" class="input-label">Name</label>`
-        renderedHtml += field1[0];
-        renderedHtml += `<label for="teamTypeDisplayName" class="input-label">Description</label>`
-        renderedHtml += field2[0];
-
-        popupCreateRole.displayInputPopupCustom("/res/others/plus.png", "Create Team", "Create", "btnCreateTeam", renderedHtml);
-
-        $("#createTeamType").click(function (e) {
-            $("#teamTypeName").val("");
-            $("#teamTypeDisplayName").val("");
-            popupCreateRole.open(e);
-        });
-
-        $(document).on('click', '#btnCreateTeam', function() {
-            createTeamType(e, popupCreateRole)
-            popupCreateRole.close()
-        });
-    });
-}
-
 
 /**
  * Creates a new Team
  */
-async function createTeam(e, popupTeam) {
+async function createTeam() {
     const teamName = $("#teamName").val();
     const teamType = $("#teamType").val();
     const teamWeight = 100
@@ -254,8 +225,10 @@ async function createTeam(e, popupTeam) {
             },
             success: function () {
                 displaySuccess("Inserted new team!");
-                popupTeam.close(e);
-                buildTeamTable()
+                loadTeams().then(function(data) {
+                    allTeams = data;
+                    sliceTableForPage(currentPageTeams, allTeams);
+                });
             },
             error: function (data) {
                 if (data.responseJSON && data.responseJSON.redirect) {
@@ -270,39 +243,6 @@ async function createTeam(e, popupTeam) {
     }
 }
 
-/**
- * Creates a new TeamType
- */
-function createTeamType(e, popupTeamType) {
-    const internalName = $("#teamTypeName").val();
-    const displayName = $("#teamTypeDisplayName").val();
-
-    if (internalName && displayName) {
-        $.ajax({
-            url: "/teamtype/insertteamtype",
-            type: "POST",
-            dataType: "json",
-            data: {
-                internalName: internalName,
-                displayName: displayName
-            },
-            success: function () {
-                displaySuccess("Inserted new team type!");
-                popupTeamType.close(e);
-                buildTeamTypeTable()
-            },
-            error: function (data) {
-                if (data.responseJSON && data.responseJSON.redirect) {
-                    window.location.href = data.responseJSON.redirect;
-                }
-                console.log("Error inserting team type:", data.responseJSON);
-                displayError("Error inserting Team Type! Try reloading the page.")
-            }
-        });
-    } else {
-        displayError("Please fill in all fields!")
-    }
-}
 
 /**
  * Returns the username of a user based on the id
@@ -348,6 +288,16 @@ function getTeamTypeDisplayName(id) {
         }
     }
     return "Not Found"; // Return a default message if no match is found
+}
+
+function getTeamTypeIdFromName(teamTypeName){
+    for (let teamType of allTeamTypes) {
+        if (teamType.name === teamTypeName) {
+            return teamType.id;
+        }
+    }
+    return null;
+
 }
 
 
