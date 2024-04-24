@@ -7,19 +7,24 @@ const elementsPerPage = 5;
 /**
  * Initializes the page
  */
-function initPage(){
-    loadTeams().then(function(teams){
-        allTeams = teams;
+function initPage() {
+    // Use Promise.all to handle both promises concurrently
+    Promise.all([loadTeams(), loadTeamTypes()]).then(function(results) {
+        // Assigning results to their respective global variables
+        allTeams = results[0]; // results from loadTeams
+        allTeamTypes = results[1]; // results from loadTeamTypes
+
+        // Display data based on current page indices
         displayTeamsForPage(currentPageTeams);
-    });
-
-    loadTeamTypes().then(function(teamTypes){
-        allTeamTypes = teamTypes;
         displayTeamTypesForPage(currentPageTypes);
-        console.log(JSON.stringify(allTeamTypes.map(teamtype => teamtype.displayname)))
-        setupCreateTeamPopup()
+
+        // Setup for creating a new team popup
+        setupCreateTeamPopup();
+    }).catch(function(error) {
+        console.error("Failed to initialize page data:", error);
     });
 
+    // Pagination for teams
     $('#teamsNextPage').click(function() {
         let totalPages = Math.ceil(allTeams.length / elementsPerPage);
         if (currentPageTeams < totalPages) {
@@ -35,8 +40,9 @@ function initPage(){
         }
     });
 
+    // Pagination for team types
     $('#typeNextPage').click(function() {
-        let totalPages = Math.ceil(allTeams.length / elementsPerPage);
+        let totalPages = Math.ceil(allTeamTypes.length / elementsPerPage);
         if (currentPageTypes < totalPages) {
             currentPageTypes++;
             displayTeamTypesForPage(currentPageTypes);
@@ -51,8 +57,9 @@ function initPage(){
     });
 }
 
+
 /**
- * Slices the notes to display only the ones for the current page
+ * Slices the teams to display only the ones for the current page
  * @param page
  */
 function displayTeamsForPage(page) {
@@ -63,7 +70,7 @@ function displayTeamsForPage(page) {
     updateTeamsPaginationIndicator(page, Math.ceil(allTeams.length / elementsPerPage));
 }
 /**
- * Slices the notes to display only the ones for the current page
+ * Slices the teamTypes to display only the ones for the current page
  * @param page
  */
 function displayTeamTypesForPage(page) {
@@ -77,30 +84,30 @@ function displayTeamTypesForPage(page) {
 
 
 /**
- * Builds the table of the existing notes
+ * Builds the table of the teams
  */
 function buildTeamsTable(teams){
     const tableBody = $('#teamsData');
     tableBody.empty();
 
-    teams.forEach(function(team){
+    teams.forEach(async function(team){
         const tr = $("<tr></tr>");
-        const tdName = $("<td></td>").text(team.displayname)
-        const tdType = $("<td></td>").text(team.teamtype_fk);
-        const tdManager = $("<td></td>").text(team.account_fk);
-        const tdNotificationDays = $("<td></td>").text(team.discordnotificationdays)
-        const tdButton = $("<td class='flex gap-2' ></td>");
+        const tdName = $("<td></td>").text(team.displayname);
+        const tdType = $("<td></td>").text(getTeamTypeDisplayName(team.teamtype_fk));
+        const tdManager = $("<td></td>").text(await getUserName(team.account_fk));
+        const tdNotificationDays = $("<td></td>").text(team.discordnotificationdays);
+        const tdButton = $("<td class='flex gap-2'></td>");
         const editTeam = $("<a href='#' id='editTeam'><i class='ri-edit-line ri-lg text-turquoise'></i></a>")
-            .click(function() {
-            });
+            .click(function() {});
 
         tr.append(tdName).append(tdType).append(tdManager).append(tdNotificationDays).append(tdButton.append(editTeam));
         tableBody.append(tr);
     });
 }
 
+
 /**
- * Builds the table of the existing notes
+ * Builds the table of the team types
  */
 function buildTeamTypesTable(teamTypes){
     const tableBody = $('#teamTypesData');
@@ -248,7 +255,6 @@ function setupCreateTeamTypePopup() {
 async function createTeam(e, popupTeam) {
     const teamName = $("#teamName").val();
     const teamType = $("#teamType").val();
-    console.log(teamType)
     const teamWeight = 100
 
     if (teamName && teamType && teamWeight) {
@@ -311,6 +317,52 @@ function createTeamType(e, popupTeamType) {
     } else {
         displayError("Please fill in all fields!")
     }
+}
+
+/**
+ * Returns the username of a user based on the id
+ * If the id is null, it returns "No Manager"
+ * @param id The ID of the user to find
+ * @returns {Promise<unknown>} The username of the user or "No Manager" if the id is null
+ */
+function getUserName(id) {
+    if(id != null){
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                url: "/user/getUsername/" + id,
+                type: "GET",
+                dataType: "json",
+                success: function (data) {
+                    if(data.length === 0){
+                        resolve("No Manager")
+                    }
+                    else{
+                        resolve(data[0].username);
+                    }
+                },
+                error: function (error) {
+                    reject(error);
+                }
+            });
+        });
+    }
+    else{
+        return "No Manager"
+    }
+}
+
+/**
+ * Returns the teamType displayName name based on the id
+ * @param id - The ID of the team type to find
+ * @returns {string} The display name of the team type
+ */
+function getTeamTypeDisplayName(id) {
+    for (let teamType of allTeamTypes) {
+        if (teamType.id === id) {
+            return teamType.displayname;
+        }
+    }
+    return "Not Found"; // Return a default message if no match is found
 }
 
 
