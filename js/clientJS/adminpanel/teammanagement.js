@@ -15,8 +15,8 @@ function initPage() {
         allTeamTypes = results[1]; // results from loadTeamTypes
 
         // Display data based on current page indices
-        displayTeamsForPage(currentPageTeams);
-        displayTeamTypesForPage(currentPageTypes);
+        sliceTableForPage(currentPageTeams, allTeams);
+        sliceTableForPage(currentPageTypes, allTeamTypes);
 
         // Setup for creating a new team popup
         setupCreateTeamPopup();
@@ -29,14 +29,14 @@ function initPage() {
         let totalPages = Math.ceil(allTeams.length / elementsPerPage);
         if (currentPageTeams < totalPages) {
             currentPageTeams++;
-            displayTeamsForPage(currentPageTeams);
+            sliceTableForPage(currentPageTeams, allTeams);
         }
     });
 
     $('#teamsPrevPage').click(function() {
         if (currentPageTeams > 1) {
             currentPageTeams--;
-            displayTeamsForPage(currentPageTeams);
+            sliceTableForPage(currentPageTeams, allTeams);
         }
     });
 
@@ -45,43 +45,36 @@ function initPage() {
         let totalPages = Math.ceil(allTeamTypes.length / elementsPerPage);
         if (currentPageTypes < totalPages) {
             currentPageTypes++;
-            displayTeamTypesForPage(currentPageTypes);
+            sliceTableForPage(currentPageTypes, allTeamTypes);
         }
     });
 
     $('#typePrevPage').click(function() {
         if (currentPageTypes > 1) {
             currentPageTypes--;
-            displayTeamTypesForPage(currentPageTypes);
+            sliceTableForPage(currentPageTypes, allTeamTypes);
         }
     });
 }
 
-
-/**
- * Slices the teams to display only the ones for the current page
- * @param page
- */
-function displayTeamsForPage(page) {
-    let startIndex = (page - 1) * elementsPerPage;
-    let endIndex = startIndex + elementsPerPage;
-    let teamsToDisplay = allTeams.slice(startIndex, endIndex);
-    buildTeamsTable(teamsToDisplay);
-    updateTeamsPaginationIndicator(page, Math.ceil(allTeams.length / elementsPerPage));
-}
 /**
  * Slices the teamTypes to display only the ones for the current page
  * @param page
+ * @param data
  */
-function displayTeamTypesForPage(page) {
+function sliceTableForPage(page, data){
     let startIndex = (page - 1) * elementsPerPage;
     let endIndex = startIndex + elementsPerPage;
-    let teamTypesToDisplay = allTeamTypes.slice(startIndex, endIndex);
-    buildTeamTypesTable(teamTypesToDisplay);
-    updateTypesPaginationIndicator(page, Math.ceil(allTeams.length / elementsPerPage));
+    let dataToDisplay = data.slice(startIndex, endIndex);
+    if(data === allTeams){
+        buildTeamsTable(dataToDisplay)
+        updatePaginationIndicator(page, Math.ceil(data.length / elementsPerPage), "teamPageIndicator");
+    }
+    else{
+        buildTeamTypesTable(dataToDisplay)
+        updatePaginationIndicator(page, Math.ceil(data.length / elementsPerPage), "typePageIndicator");
+    }
 }
-
-
 
 /**
  * Builds the table of the teams
@@ -129,20 +122,12 @@ function buildTeamTypesTable(teamTypes){
 
 /**
  * Updates the pagination indicator
- * @param currentPage
- * @param totalPages
+ * @param currentPage The current page index
+ * @param totalPages Total pages available
+ * @param elementName The name of the element to update
  */
-function updateTeamsPaginationIndicator(currentPage, totalPages) {
-    $('#teamsPageIndicator').text(`Page ${currentPage} / ${totalPages}`);
-}
-
-/**
- * Updates the pagination indicator
- * @param currentPage
- * @param totalPages
- */
-function updateTypesPaginationIndicator(currentPage, totalPages) {
-    $('#typePageIndicator').text(`Page ${currentPage} / ${totalPages}`);
+function updatePaginationIndicator(currentPage, totalPages, elementName) {
+    $('#'+elementName).text(`Page ${currentPage} / ${totalPages}`);
 }
 
 /**
