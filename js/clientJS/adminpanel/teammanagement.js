@@ -18,8 +18,9 @@ function initPage() {
         sliceTableForPage(currentPageTeams, allTeams);
         sliceTableForPage(currentPageTypes, allTeamTypes);
 
-        // Setup for creating a new team popup
+        // Setup popups
         setupCreateTeamPopup();
+        setupCreateTeamTypePopup()
     }).catch(function(error) {
         console.error("Failed to initialize page data:", error);
     });
@@ -198,9 +199,41 @@ function setupCreateTeamPopup() {
             popupCreateTeam.open(e);
         });
 
-        $(document).on('click', '#btnCreateTeam', function() {
+        $(document).off('click', '#btnCreateTeam').on('click', '#btnCreateTeam', function() {
             popupCreateTeam.close();
-            createTeam(popupCreateTeam)
+            createTeam();
+        });
+    });
+}
+
+/**
+ * Sets up the create teamType popup
+ */
+function setupCreateTeamTypePopup() {
+    const popupCreateTeamType = new Popup("popup-containerCreateTeamType");
+
+    let renderedHtml = '';
+
+    $.when(
+        fetchEntryField('text', 'teamtypename', 'teamTypeName', 'w-52', ''),
+        fetchEntryField('text', 'teamtypedisplayname', 'teamTypeDisplayName', 'w-52', ''),
+    ).then(function(field1, field2) {
+        renderedHtml += `<label for="teamTypeName" class="input-label">Name</label>`
+        renderedHtml += field1[0];
+        renderedHtml += `<label for="teamTypeDisplayName" class="input-label">Display name</label>`
+        renderedHtml += field2[0];
+
+        popupCreateTeamType.displayInputPopupCustom("/res/others/plus.png", "Create TeamType", "Create", "btnCreateTeamType", renderedHtml);
+
+        $("#createTeamType").click(function (e) {
+            $("#teamTypeName").val("");
+            $("#teamTypeDisplayName").val("");
+            popupCreateTeamType.open(e);
+        });
+
+        $(document).off('click', '#btnCreateTeamType').on('click', '#btnCreateTeamType', function() {
+            popupCreateTeamType.close();
+            createTeamType();
         });
     });
 }
@@ -243,6 +276,41 @@ async function createTeam() {
     }
 }
 
+/**
+ * Creates a new TeamType
+ */
+function createTeamType() {
+    const internalName = $("#teamTypeName").val();
+    const displayName = $("#teamTypeDisplayName").val();
+
+    if (internalName && displayName) {
+        $.ajax({
+            url: "/teamtype/insertteamtype",
+            type: "POST",
+            dataType: "json",
+            data: {
+                internalName: internalName,
+                displayName: displayName
+            },
+            success: function () {
+                displaySuccess("Inserted new team type!");
+                loadTeamTypes().then(function(data) {
+                    allTeamTypes = data;
+                    sliceTableForPage(currentPageTypes, allTeamTypes);
+                });
+            },
+            error: function (data) {
+                if (data.responseJSON && data.responseJSON.redirect) {
+                    window.location.href = data.responseJSON.redirect;
+                }
+                console.log("Error inserting team type:", data.responseJSON);
+                displayError("Error inserting Team Type! Try reloading the page.")
+            }
+        });
+    } else {
+        displayError("Please fill in all fields!")
+    }
+}
 
 /**
  * Returns the username of a user based on the id
@@ -289,15 +357,3 @@ function getTeamTypeDisplayName(id) {
     }
     return "Not Found"; // Return a default message if no match is found
 }
-
-function getTeamTypeIdFromName(teamTypeName){
-    for (let teamType of allTeamTypes) {
-        if (teamType.name === teamTypeName) {
-            return teamType.id;
-        }
-    }
-    return null;
-
-}
-
-
