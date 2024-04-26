@@ -92,7 +92,10 @@ function buildTeamsTable(teams){
         const tdNotificationDays = $("<td></td>").text(team.discordnotificationdays);
         const tdButton = $("<td class='flex gap-2'></td>");
         const editTeam = $("<a href='#' id='editTeam'><i class='ri-edit-line ri-lg text-turquoise'></i></a>")
-            .click(function() {});
+            .click(function() {
+                $('#teamEdit').removeClass('hidden');
+                displayEditTeam(team);
+            });
 
         tr.append(tdName).append(tdType).append(tdManager).append(tdNotificationDays).append(tdButton.append(editTeam));
         tableBody.append(tr);
@@ -164,7 +167,7 @@ function loadTeamTypes(){
 }
 
 /**
- * Sets up the create team popup
+ * Sets up the createTeam popup
  */
 function setupCreateTeamPopup() {
     const popupCreateTeam = new Popup("popup-containerCreateTeam");
@@ -207,7 +210,7 @@ function setupCreateTeamPopup() {
 }
 
 /**
- * Sets up the create teamType popup
+ * Sets up the createTeamType popup
  */
 function setupCreateTeamTypePopup() {
     const popupCreateTeamType = new Popup("popup-containerCreateTeamType");
@@ -356,4 +359,61 @@ function getTeamTypeDisplayName(id) {
         }
     }
     return "Not Found"; // Return a default message if no match is found
+}
+
+/**
+ * Displays the details of a gameday
+ * @param team
+ */
+function displayEditTeam(team) {
+    console.log(team)
+    delete team.id;
+    let teamEdit = $('#teamEdit');
+    teamEdit.empty();
+
+    const editTable = $('<table class="table-auto w-full bg-grey-level2 mt-4 overflow-x-auto"></table>');
+
+    // Create table header with team title
+    const thead = $('<thead></thead>');
+    const trHead = $('<tr></tr>');
+    const th = $('<th colspan="2" class="text-left pb-4 font-montserrat font-bold text-almost-white text-lg"></th>').text(`Edit ${team.displayname} Team`);
+    trHead.append(th);
+    thead.append(trHead);
+    editTable.append(thead);
+
+    const tbody = $('<tbody class="text-almost-white font-montserrat"></tbody>');
+
+    let customClass;
+    for (const [key, value] of Object.entries(team)) {
+        const tr = $('<tr></tr>');
+        const tdKey = $('<td class="font-bold w-48"></td>').text(key.charAt(0).toUpperCase() + key.slice(1));
+        let displayValue = value;
+        if (key === 'date' || (key === 'reportdate' && displayValue)) {
+            displayValue = new Date(value).toLocaleString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
+        }
+
+        if(key === 'status'){
+            displayValue = displayValue ? 'Completed' : 'Not completed';
+            customClass = displayValue === 'Completed' ? 'text-success' : 'text-error';
+        }
+
+        if (!displayValue){
+            displayValue = "-";
+        }
+
+        if(key === 'result' && displayValue === 'Not reported'){
+            customClass = 'text-error';
+        }
+
+        const tdValue = $('<td class="break-all py-1"></td>').text(displayValue).addClass(customClass);
+        customClass = '';
+
+
+        tr.append(tdKey).append(tdValue);
+        tbody.append(tr);
+
+    }
+
+    editTable.append(tbody);
+    teamEdit.append(editTable);
 }
