@@ -366,7 +366,6 @@ function getTeamTypeDisplayName(id) {
  * @param team
  */
 function displayEditTeam(team) {
-    console.log(team)
     delete team.id;
     let teamEdit = $('#teamEdit');
     teamEdit.empty();
@@ -385,35 +384,66 @@ function displayEditTeam(team) {
 
     let customClass;
     for (const [key, value] of Object.entries(team)) {
-        const tr = $('<tr></tr>');
-        const tdKey = $('<td class="font-bold w-48"></td>').text(key.charAt(0).toUpperCase() + key.slice(1));
-        let displayValue = value;
-        if (key === 'date' || (key === 'reportdate' && displayValue)) {
-            displayValue = new Date(value).toLocaleString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
+        const tr = $('<div class="max-w-[250px]"></div>');
+
+        // Create a table cell for the key with a bold font and a specific width
+        const tdKey = $('<label class="font-montnserrat text-base text-almost-white"></label>').text(key.charAt(0).toUpperCase() + key.slice(1));
+
+        // Default input value
+        let inputValue = value;
+
+        // Check if the input value is empty and replace it with a placeholder
+        if (!inputValue) {
+            inputValue = "";
         }
 
-        if(key === 'status'){
-            displayValue = displayValue ? 'Completed' : 'Not completed';
-            customClass = displayValue === 'Completed' ? 'text-success' : 'text-error';
+        // Create a table cell and append the input element to it
+        const tdValue = $('<td></td>')
+
+        if(key === 'teamtype_fk'){
+            const optionsWithValues = allTeamTypes.map(teamType => {
+                return {
+                    ...teamType,          // Spread to copy all existing properties
+                    text: teamType.name,   // Add new 'text' property, copying the value from 'name'
+                    value: teamType.id     // Add new 'value' property, copying the value from 'id'
+                };
+            });
+
+            // Convert optionsWithValues to a JSON string to be used in the fetchDropdown function
+            const optionsJson = JSON.stringify(optionsWithValues);
+            fetchDropdown('teamType', 'w-52',optionsJson , optionsWithValues.find(teamType => teamType.id === inputValue).text).then(function(field) {
+                tdValue.append(field);
+            });
         }
 
-        if (!displayValue){
-            displayValue = "-";
+        else{
+            fetchEntryField('text', team.displayname + "_" +key.charAt(0).toUpperCase() + key.slice(1), team.displayname + "_"+ key.charAt(0).toUpperCase() + key.slice(1), 'w-40',inputValue ).then(function(field) {
+                tdValue.append(field);
+            });
         }
 
-        if(key === 'result' && displayValue === 'Not reported'){
-            customClass = 'text-error';
-        }
-
-        const tdValue = $('<td class="break-all py-1"></td>').text(displayValue).addClass(customClass);
-        customClass = '';
-
-
+        // Append both cells to the table row
         tr.append(tdKey).append(tdValue);
+
+        // Append the row to the tbody
         tbody.append(tr);
 
     }
+    const btnContainer = $('<div class="flex float-right gap-4"></div>');
+    fetchButton('button', 'btnCloseEditTeam', 'Close', 'w-32', '', '', '', '').then(function(button) {
+        // Create a container for the button with absolute positioning
+        btnContainer.append(button);
+    });
+    fetchButton('button', 'btnSaveEditTeam', 'Save', 'w-32', '', '', '', 'Success').then(function(button) {
+        // Create a container for the button with absolute positioning
+        btnContainer.append(button);
+
+        // Append the button container to the main container
+        teamEdit.append(btnContainer);
+    });
+
 
     editTable.append(tbody);
     teamEdit.append(editTable);
 }
+
