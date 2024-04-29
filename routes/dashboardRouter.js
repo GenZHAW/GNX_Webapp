@@ -142,9 +142,6 @@ router.get('/valorantstats', checkNotAuthenticated, permissionCheck('home', 'can
     res.render('dashboard/valorantstats.ejs', { user: req.user });
 });
 
-
-
-
 /**
  * GET patchnotes page
  */
@@ -160,7 +157,7 @@ router.get('/cronjob', checkNotAuthenticated, permissionCheck('adminpanel', 'can
 });
 
 /**
- * GET cronjob page
+ * GET registrationcode page
  */
 router.get('/registrationcode', checkNotAuthenticated, permissionCheck('adminpanel', 'canOpen'), (req, res) => {
     res.render('dashboard/adminpanel/registrationcode.ejs', { user: req.user });
