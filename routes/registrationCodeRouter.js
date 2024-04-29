@@ -8,19 +8,29 @@ const util = require("util");
 const {checkNotAuthenticated, permissionCheck} = require("../js/serverJS/sessionChecker");
 const {logMessage, LogLevel} = require('../js/serverJS/logger.js');
 
+/**
+ * POST route for generating a new registration code for a specific team
+ */
 router.post('/generateNewRegistrationCode/:teamId', checkNotAuthenticated, permissionCheck('usermanagement', 'canOpen'), function (req, res) {
     const teamId = req.params.teamId;
     generateNewRegistrationCode(teamId).then(()=>{
         logMessage(`New Registration Code generated for Team ${teamId}`, LogLevel.INFO, req.user.id)
-        res.status(200).send("New Registration Code generated successfully");
+        res.status(200).send({message: "New Registration Code generated successfully"});
     });
 });
 
+/**
+ * GET route for getting all registration codes
+ */
 router.get('/getregistrationcodes', checkNotAuthenticated, permissionCheck('usermanagement', 'canOpen'), async (req, res) => {
     const registrationCodes = await getRegistrationCodes();
     res.send(registrationCodes);
 });
 
+/**
+ * POST route for updating the state of a registration code
+
+ */
 router.post('/updateRegistrationCode/:code/:used', checkNotAuthenticated, permissionCheck('usermanagement', 'canOpen'), function (req, res) {
     const regCode = req.params.code;
     const used = req.params.used;
@@ -29,6 +39,11 @@ router.post('/updateRegistrationCode/:code/:used', checkNotAuthenticated, permis
     res.status(200).send("Registration Code updated successfully");
 });
 
+/**
+ * Generates a new registration code for a specific team in the database
+ * @param teamId
+ * @returns {Promise<unknown>}
+ */
 function generateNewRegistrationCode(teamId) {
     //Generate Random Number as Code
     const min = 1000000;
@@ -43,12 +58,18 @@ function generateNewRegistrationCode(teamId) {
     return new Promise((resolve, reject) => {
         pool.query('INSERT INTO registrationcode (code, used, validuntil, team_fk) VALUES ($1, $2, $3, $4)', [randomNum, 0, epochTomorrow, teamId], (err, result) => {
             if (err) {
+                reject(err);
                 console.log(err);
             }
+            resolve();
         });
     });
 }
 
+/**
+ * Gets all registration codes from the database
+ * @returns {Promise<*>}
+ */
 async function getRegistrationCodes() {
     //Get Epoch Timestamp from last week
     const now = new Date();
@@ -79,6 +100,11 @@ async function getRegistrationCodes() {
     });
 }
 
+/**
+ * Updates the status of registration code in the database
+ * @param code
+ * @param used
+ */
 function updateRegistrationCode(code, used) {
     //Get Epoch Timestamp from tomorrow
     const now = new Date();
