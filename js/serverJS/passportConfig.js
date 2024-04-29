@@ -92,55 +92,134 @@ function initialize(passport) {
     // The fetched object is attached to the request object as req.user
 
     passport.deserializeUser(async (id, done) => {
-        const accountFields = await getUserFields();
+        try {
+            let user = await buildUserObject(id);
 
-        pool.query(`SELECT ${accountFields}
-                    FROM account
-                    WHERE id = $1`, [id], (err, results) => {
-            if (err) {
-                return done(err);
-            }
-            let user = results.rows[0];
-            pool.query('SELECT team.id, team.displayname, team.weight, team.teamtype_fk, team.account_fk, team.salepercentage FROM team LEFT JOIN teammembership ON teammembership.team_fk = team.id WHERE teammembership.account_fk = $1 ORDER BY team.weight DESC LIMIT 1', [user.id], function (err, result) {
-                if (err) {
-                    return done(err);
-                }
-                user.team = result.rows[0];
-
-                pool.query('SELECT * FROM subscription LEFT JOIN subscriptiondefinition ON subscriptiondefinition.id = subscription.subscriptiondefinition_fk WHERE account_fk = $1 LIMIT 1', [user.id], function (err, result) {
-                    if (err) {
-                        return done(err);
-                    }
-                    user.subscription = result.rows[0];
-
-                    pool.query('SELECT * FROM teamtype WHERE id=$1', [user.team.teamtype_fk], function (err, result) {
-                        if (err) {
-                            return done(err);
-                        }
-                        user.teamtype = result.rows[0];
-
-                        pool.query(`SELECT permissiontype.location, permissiontype.permission FROM role
-                        LEFT JOIN roletype ON roletype.id = role.roletype_fk
-                        LEFT JOIN permission ON "permission".roletype_fk = roletype.id
-                        LEFT JOIN permissiontype ON permissiontype.id = "permission".permissiontype_fk
-                        WHERE roletype.id IS NOT NULL AND (role.team_fk = $2 OR role.account_fk = $1)
-                        GROUP BY permissiontype.location, permissiontype.permission`, [user.id, user.team.id], function (err, result) {
-                            if (err) {
-                                return done(err);
-                            }
-
-                            result.rows.forEach(function (row) {
-                                user[row.location] = user[row.location] || {};
-                                user[row.location][row.permission] = true;
-                            });
-
-                            return done(null, results.rows[0]);
-                        });
-                    });
-                });
-            });
-        });
+            return done(null, user);
+        } catch (err) {
+            return done(err);
+        }
     });
+}
+
+/**
+ * Builds the user object with all its data
+ * @param id
+ * @returns {Promise<void>}
+ */
+async function buildUserObject(id) {
+    const accountFields = await getUserFields();
+    let user = await queryUserById(id, accountFields);
+    user.team = await queryUserTeam(user.id, user.currentteam_fk);
+    user.subscription = await queryUserSubscription(user.id);
+    user.teamtype = await queryTeamType(user.team.teamtype_fk);
+
+    // Fetch permissions and apply them to the user object in a nested manner
+    const permissions = await queryUserPermissions(user.id, user.team.id);
+    for (const location in permissions) {
+        if (!user[location]) {
+            user[location] = {}; // Ensure the location object exists
+        }
+        Object.assign(user[location], permissions[location]); // Merge permissions into the location object
+    }
+
+    return user;
+}
+
+/**
+ * This function queries the team of the user
+ * @param userId
+ * @returns {Promise<any>}
+ */
+async function queryUserTeam(userId, teamId = 0) {
+    // Start with the base query
+    let query = `
+        SELECT team.id, team.displayname, team.weight, team.teamtype_fk, team.account_fk, team.salepercentage 
+        FROM team 
+        LEFT JOIN teammembership ON teammembership.team_fk = team.id 
+        WHERE teammembership.account_fk = $1`;
+
+    let params = [userId];
+
+    if (teamId > 0) {
+        query += ` AND team.id = $2`;
+        params.push(teamId);
+    }
+
+    query += ` ORDER BY team.weight DESC LIMIT 1`;
+
+    const result = await pool.query(query, params);
+    return result.rows[0];
+}
+
+
+/**
+ * This function queries the subscription of the user
+ * @param userId
+ * @returns {Promise<any>}
+ */
+async function queryUserSubscription(userId) {
+    const result = await pool.query(
+        `SELECT * FROM subscription 
+        LEFT JOIN subscriptiondefinition ON subscriptiondefinition.id = subscription.subscriptiondefinition_fk 
+        WHERE account_fk = $1 
+        LIMIT 1`,
+        [userId]
+    );
+    return result.rows[0];
+}
+
+/**
+ * This function queries the team type of the user
+ * @param teamTypeId
+ * @returns {Promise<any>}
+ */
+async function queryTeamType(teamTypeId) {
+    const result = await pool.query(
+        `SELECT * FROM teamtype WHERE id = $1`,
+        [teamTypeId]
+    );
+    return result.rows[0];
+}
+
+/**
+ * This function queries the permissions of the user
+ * @param userId
+ * @param teamId
+ * @returns {Promise<{}>}
+ */
+async function queryUserPermissions(userId, teamId) {
+    const result = await pool.query(
+        `SELECT permissiontype.location, permissiontype.permission 
+        FROM role
+        LEFT JOIN roletype ON roletype.id = role.roletype_fk
+        LEFT JOIN permission ON "permission".roletype_fk = roletype.id
+        LEFT JOIN permissiontype ON permissiontype.id = "permission".permissiontype_fk
+        WHERE roletype.id IS NOT NULL AND (role.team_fk = $2 OR role.account_fk = $1)
+        GROUP BY permissiontype.location, permissiontype.permission`,
+        [userId, teamId]
+    );
+    let permissions = {};
+    result.rows.forEach(row => {
+        if (!permissions[row.location]) {
+            permissions[row.location] = {};
+        }
+        permissions[row.location][row.permission] = true; // Set the permission within the location to true
+    });
+    return permissions;
+}
+
+/**
+ * This function queries the user by the id
+ * @param userId
+ * @param accountFields
+ * @returns {Promise<any>}
+ */
+async function queryUserById(userId, accountFields) {
+    const result = await pool.query(
+        `SELECT ${accountFields} FROM account WHERE id = $1`, [userId]
+    );
+    return result.rows[0];
 }
 
 /**
@@ -213,4 +292,4 @@ async function clearOtherSessions(userId, currentSessionId) {
     }
 }
 
-module.exports = {initialize}
+module.exports = {initialize, buildUserObject}

@@ -27,7 +27,7 @@ const trainingRouter = require('./routes/trainingRouter.js');
 const permissionRouter = require('./routes/permissionRouter.js');
 const discordBotRouter = require('./routes/discordBotRouter.js');
 const discordBot = require('./js/serverJS/discordBot.js');
-const {checkAuthenticated} = require('./js/serverJS/sessionChecker.js');
+const {checkAuthenticated, checkNotAuthenticated} = require('./js/serverJS/sessionChecker.js');
 const leagueRouter = require('./routes/leagueRouter.js');
 const valorantRouter = require('./routes/valorantRouter.js');
 const calendarRouter = require('./routes/calendarRouter.js');
@@ -69,7 +69,6 @@ client.login(process.env.DISCORD_TOKEN).then(() => {
         cronManager.registerCronJobs();
     });
 });
-
 
 /**
  * PASSPORT SETUP / SESSION HANDLING
@@ -283,6 +282,24 @@ app.get('/renderTextarea', (req, res) => {
     res.render('components/textarea.ejs', {
         id, width, value
     });
+});
+
+/**
+ * POST route for changing the currently displayed team of a user
+ */
+app.post('/changeteam', checkNotAuthenticated, (req, res, next) => {
+    const teamId = req.body.teamId;
+    if (!teamId) {
+        return res.status(400).send("Team ID is required");
+    }
+
+    pool.query('UPDATE account SET currentteam_fk = $1 WHERE id = $2', [teamId, req.user.id], (err) => {
+        if (err) {
+            res.status(500).send({message:  "Error changing team!"});
+        }else{
+            res.status(200).send({message:  "Team changed successfully!"});
+        }
+    })
 });
 
 module.exports = app;

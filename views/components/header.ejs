@@ -51,7 +51,12 @@
 <script>
     $(document).ready(function() {
         let timer;
-        let user = JSON.parse('<%- JSON.stringify(user) %>');
+        let user;
+        <% if (typeof user !== 'undefined') { %>
+        user = JSON.parse('<%- JSON.stringify(user) %>');
+        <% } else { %>
+        user = null;
+        <% } %>
 
         $("#changeTeamLink").hover(() => {
             $("#teamOptionsPopup").stop(true, true).fadeIn();
@@ -105,29 +110,48 @@
             hidePopup();
         });
 
-        //Only display the change team link if the user has multiple teams
-        $.ajax({
-            url: '/user/hasMultipleTeams',
-            type: 'GET',
-            success: function (data) {
-                if (data.response) {
-                    $('#changeTeamLink').removeClass('hidden');
-                    data.teams.forEach(team => {
-                        const currentTeam = (team.team_fk === user.team.id) ? '<i class="ri-check-line ml-2 ri-lg"></i>' : '';
-                        $('#teamOptionsContainer').append(`<a href="#" class="flex items-center w-full pl-4 py-3 pr-4 group hover:bg-turquoise hover:bg-opacity-20 relative cursor-pointer">
+        if(user){
+            //Only display the change team link if the user has multiple teams
+            $.ajax({
+                url: '/user/hasMultipleTeams',
+                type: 'GET',
+                success: function (data) {
+                    if (data.response) {
+                        $('#changeTeamLink').removeClass('hidden');
+                        data.teams.forEach(team => {
+                            const currentTeam = (team.team_fk === user.team.id) ? '<i class="ri-check-line ml-2 ri-lg"></i>' : '';
+                            $('#teamOptionsContainer').append(`<a href="#" id="reallyChangeTeamLink" data-teamId="${team.team_fk}" class="flex items-center w-full pl-4 py-3 pr-4 group hover:bg-turquoise hover:bg-opacity-20 relative cursor-pointer">
                             ${currentTeam}
                             <span class="text-almost-white font-montserrat ml-4 text-base">${team.displayname}</span>
                         </a>`);
-                    });
+                        });
+
+                        $('#teamOptionsContainer').on('click', '#reallyChangeTeamLink', function(e) {
+                            e.preventDefault();  // Prevent default anchor click behavior
+                            const teamId = $(this).data('teamid');
+
+                            $.ajax({
+                                url: '/changeteam',
+                                type: 'POST',
+                                data: { teamId: teamId },
+                                success: function(response) {
+                                    window.location.href = '/';
+                                },
+                                error: function(xhr) {
+                                    alert('Error changing team: ' + xhr.responseText);
+                                }
+                            });
+                        });
+                    }
+                },
+                error: function (data) {
+                    if (data.responseJSON && data.responseJSON.redirect) {
+                        window.location.href = data.responseJSON.redirect;
+                    }
+                    displayError(data.responseJSON.message);
                 }
-            },
-            error: function (data) {
-                if (data.responseJSON && data.responseJSON.redirect) {
-                    window.location.href = data.responseJSON.redirect;
-                }
-                displayError(data.responseJSON.message);
-            }
-        })
+            })
+        }
     });
 </script>
 
