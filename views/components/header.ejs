@@ -24,7 +24,12 @@
             </div>
         </div>
         <div class="popup-modal fixed hidden flex z-50">
-            <div class="bg-grey-level3 shadow-md fixed top-[60px] right-2 w-40 z-50">
+            <div class="bg-grey-level3 shadow-md fixed top-[60px] right-[23px] w-56 z-50" id="changeTeam">
+                <a href="#" class="hidden flex items-center w-full pl-4 py-3 pr-4 group hover:bg-turquoise hover:bg-opacity-20 relative cursor-pointer" id="changeTeamLink">
+                    <i class="ri-group-line ri-lg text-almost-white"></i>
+                    <span class="text-almost-white font-montserrat ml-4 text-base">Change Team</span>
+                    <i class="ri-arrow-right-s-line text-almost-white ml-4"></i>
+                </a>
                 <a href="#" class="flex items-center w-full pl-4 py-3 pr-4 group hover:bg-turquoise hover:bg-opacity-20 relative cursor-pointer" id="settingLink">
                     <i class="ri-settings-3-line ri-lg text-almost-white"></i>
                     <span class="text-almost-white font-montserrat ml-4 text-base">Settings</span>
@@ -36,12 +41,38 @@
             </div>
         </div>
 
-    <% } %>
+        <div class="hidden fixed flex z-50" id="teamOptionsPopup">
+            <div class="bg-grey-level3 shadow-md fixed top-[80px] right-[250px] w-56 z-50" id="teamOptionsContainer">
+            </div>
+        </div>
+    <%} %>
 </div>
 
 <script>
     $(document).ready(function() {
         let timer;
+        let user = JSON.parse('<%- JSON.stringify(user) %>');
+
+        $("#changeTeamLink").hover(() => {
+            $("#teamOptionsPopup").stop(true, true).fadeIn();
+        }, () => {
+            timer = setTimeout(() => {
+            if (!$("#teamOptionsPopup").is(":hover")) {
+                $("#teamOptionsPopup").stop(true, true).fadeOut();
+            }
+            }, 100);
+        });
+
+        $('#teamOptionsPopup').hover(() => {
+            clearTimeout(timer);
+        }, () => {
+            timer = setTimeout(() => {
+                if (!$(".popup-modal").is(":hover")) {
+                    $("#teamOptionsPopup").stop(true, true).fadeOut();
+                    $(".popup-modal").stop(true, true).fadeOut();
+                }
+            }, 100);
+        });
 
         const handleMouseEnter = () => {
             clearTimeout(timer);
@@ -50,7 +81,10 @@
 
         const handleMouseLeave = () => {
             timer = setTimeout(() => {
-                $(".popup-modal").stop(true, true).fadeOut();
+                if (!$("#teamOptionsPopup").is(":hover")) {
+                    $(".popup-modal").stop(true, true).fadeOut();
+                    $("#teamOptionsPopup").stop(true, true).fadeOut();
+                }
             }, 100);
         };
 
@@ -68,8 +102,32 @@
         $(document).off('click', '#settingLink').on('click', '#settingLink', function(e) {
             e.preventDefault();
             loadPage('settings');
-            hidePopup(); // Hide the popup on click*/
+            hidePopup();
         });
+
+        //Only display the change team link if the user has multiple teams
+        $.ajax({
+            url: '/user/hasMultipleTeams',
+            type: 'GET',
+            success: function (data) {
+                if (data.response) {
+                    $('#changeTeamLink').removeClass('hidden');
+                    data.teams.forEach(team => {
+                        const currentTeam = (team.team_fk === user.team.id) ? '<i class="ri-check-line ml-2 ri-lg"></i>' : '';
+                        $('#teamOptionsContainer').append(`<a href="#" class="flex items-center w-full pl-4 py-3 pr-4 group hover:bg-turquoise hover:bg-opacity-20 relative cursor-pointer">
+                            ${currentTeam}
+                            <span class="text-almost-white font-montserrat ml-4 text-base">${team.displayname}</span>
+                        </a>`);
+                    });
+                }
+            },
+            error: function (data) {
+                if (data.responseJSON && data.responseJSON.redirect) {
+                    window.location.href = data.responseJSON.redirect;
+                }
+                displayError(data.responseJSON.message);
+            }
+        })
     });
 </script>
 
