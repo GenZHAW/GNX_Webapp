@@ -3,6 +3,7 @@ let allTeamTypes = [];
 let currentPageTeams = 1;
 let currentPageTypes = 1;
 const elementsPerPage = 5;
+let users = [];
 
 /**
  * Initializes the page
@@ -13,14 +14,15 @@ function initPage() {
         // Assigning results to their respective global variables
         allTeams = results[0]; // results from loadTeams
         allTeamTypes = results[1]; // results from loadTeamTypes
+        getUsers().then(function(data) {
+            // Display data based on current page indices
+            sliceTableForPage(currentPageTeams, allTeams);
+            sliceTableForPage(currentPageTypes, allTeamTypes);
 
-        // Display data based on current page indices
-        sliceTableForPage(currentPageTeams, allTeams);
-        sliceTableForPage(currentPageTypes, allTeamTypes);
-
-        // Setup popups
-        setupCreateTeamPopup();
-        setupCreateTeamTypePopup()
+            // Setup popups
+            setupCreateTeamPopup();
+            setupCreateTeamTypePopup()
+        });
     }).catch(function(error) {
         console.error("Failed to initialize page data:", error);
     });
@@ -88,13 +90,14 @@ function buildTeamsTable(teams){
         const tr = $("<tr></tr>");
         const tdName = $("<td></td>").text(team.displayname);
         const tdType = $("<td></td>").text(getTeamTypeDisplayName(team.teamtype_fk));
-        const tdManager = $("<td></td>").text(await getUserName(team.account_fk));
+        const tdManager = $("<td></td>").text(getManagerName(team.account_fk));
         const tdNotificationDays = $("<td></td>").text(team.discordnotificationdays);
         const tdButton = $("<td class='flex gap-2'></td>");
         const editTeam = $("<a href='#' id='editTeam'><i class='ri-edit-line ri-lg text-turquoise'></i></a>")
             .click(function() {
                 $('#teamEdit').removeClass('hidden');
-                displayEditTeam(team);
+                const rowElement = $(this).closest('tr');
+                displayEditTeam(team, rowElement);
             });
 
         tr.append(tdName).append(tdType).append(tdManager).append(tdNotificationDays).append(tdButton.append(editTeam));
@@ -321,32 +324,11 @@ function createTeamType() {
  * @param id The ID of the user to find
  * @returns {Promise<unknown>} The username of the user or "No Manager" if the id is null
  */
-function getUserName(id) {
-    if(id != null){
-        return new Promise((resolve, reject) => {
-            $.ajax({
-                url: "/user/getUsername/" + id,
-                type: "GET",
-                dataType: "json",
-                success: function (data) {
-                    if(data.length === 0){
-                        resolve("No Manager")
-                    }
-                    else{
-                        resolve(data[0].username);
-                    }
-                },
-                error: function (error) {
-                    reject(error);
-                }
-            });
-        });
-    }
-    else{
-        return "No Manager"
-    }
-}
+function getManagerName(id) {
+    user = users.find(user => user.id === id)
+    return user ? user.username : 'No Manager';
 
+}
 /**
  * Returns the teamType displayName name based on the id
  * @param id - The ID of the team type to find
@@ -364,30 +346,27 @@ function getTeamTypeDisplayName(id) {
 /**
  * Displays the details of a gameday
  * @param team
+ * @param triggeringElement
  */
-function displayEditTeam(team) {
+function displayEditTeam(team, triggeringElement) {
+    teamId = team.id;
     delete team.id;
-    let teamEdit = $('#teamEdit');
+    // Creating a new table row to hold the editing form
+    if($('#teamEdit').length > 0) {
+        $('#teamEdit').remove();
+    }
+
+
+    let teamEdit = $('<tr id="teamEdit"></tr>');
     teamEdit.empty();
 
-    const editTable = $('<table class="table-auto w-full bg-grey-level2 mt-4 overflow-x-auto"></table>');
+    const editTable = $('<td colspan="5"></td>');
 
-    // Create table header with team title
-    const thead = $('<thead></thead>');
-    const trHead = $('<tr></tr>');
-    const th = $('<th colspan="2" class="text-left pb-4 font-montserrat font-bold text-almost-white text-lg"></th>').text(`Edit ${team.displayname} Team`);
-    trHead.append(th);
-    thead.append(trHead);
-    editTable.append(thead);
+    const tbody = $('<div class="flex flex-wrap text-almost-white font-montserrat gap-2"></div>');
 
-    const tbody = $('<tbody class="text-almost-white font-montserrat"></tbody>');
-
-    let customClass;
     for (const [key, value] of Object.entries(team)) {
-        const tr = $('<div class="max-w-[250px]"></div>');
-
-        // Create a table cell for the key with a bold font and a specific width
-        const tdKey = $('<label class="font-montnserrat text-base text-almost-white"></label>').text(key.charAt(0).toUpperCase() + key.slice(1));
+        fieldName = "edit"+key
+        const tr = $('<div></div>');
 
         // Default input value
         let inputValue = value;
@@ -398,26 +377,59 @@ function displayEditTeam(team) {
         }
 
         // Create a table cell and append the input element to it
-        const tdValue = $('<td></td>')
+        const tdValue = $('<div></div>')
+        let tdKey;
 
         if(key === 'teamtype_fk'){
+            // Create a table cell for the key with a bold font and a specific width
+            tdKey = $('<label class="font-montnserrat text-base text-almost-white"></label>').text("Team Type");
+
             const optionsWithValues = allTeamTypes.map(teamType => {
                 return {
-                    ...teamType,          // Spread to copy all existing properties
                     text: teamType.name,   // Add new 'text' property, copying the value from 'name'
                     value: teamType.id     // Add new 'value' property, copying the value from 'id'
                 };
             });
 
+            let defaultOption = optionsWithValues.find(teamType => teamType.value === inputValue);
+
             // Convert optionsWithValues to a JSON string to be used in the fetchDropdown function
             const optionsJson = JSON.stringify(optionsWithValues);
-            fetchDropdown('teamType', 'w-52',optionsJson , optionsWithValues.find(teamType => teamType.id === inputValue).text).then(function(field) {
+            fetchDropdown(fieldName, 'w-52',optionsJson ,defaultOption.text).then(function(field) {
+                tdValue.append(field);
+            });
+        }
+        else if(key === 'account_fk'){
+            tdKey = $('<label class="font-montnserrat text-base text-almost-white"></label>').text("Team Manager");
+            const optionsWithValues = users.map(user => {
+                return {
+                    text: user.username,   // Add new 'text' property, copying the value from 'name'
+                    value: user.id     // Add new 'value' property, copying the value from 'id'
+                };
+            });
+
+            let defaultOption = optionsWithValues.find(user => user.value === inputValue);
+            defaultOption = defaultOption ? defaultOption.text : 'No Manager';
+            // Convert optionsWithValues to a JSON string to be used in the fetchDropdown function
+            const optionsJson = JSON.stringify(optionsWithValues);
+            fetchDropdown(fieldName, 'w-52',optionsJson , defaultOption).then(function(field) {
+                tdValue.append(field);
+            });
+        }
+
+        else if(key === 'discordnotificationdays')
+        {
+            tdKey = $('<label class="font-montnserrat text-base text-almost-white"></label>').text("Discord Notifications");
+            fetchEntryField('text', team.displayname + "_"+ key, fieldName, 'w-64', inputValue).then(function(field) {
                 tdValue.append(field);
             });
         }
 
         else{
-            fetchEntryField('text', team.displayname + "_" +key.charAt(0).toUpperCase() + key.slice(1), team.displayname + "_"+ key.charAt(0).toUpperCase() + key.slice(1), 'w-40',inputValue ).then(function(field) {
+            // Create a table cell for the key with a bold font and a specific width
+            tdKey = $('<label class="font-montnserrat text-base text-almost-white"></label>').text(key.charAt(0).toUpperCase() + key.slice(1));
+
+            fetchEntryField('text', team.displayname + "_" +key.charAt(0).toUpperCase() + key.slice(1), fieldName, 'w-64',inputValue ).then(function(field) {
                 tdValue.append(field);
             });
         }
@@ -429,21 +441,86 @@ function displayEditTeam(team) {
         tbody.append(tr);
 
     }
-    const btnContainer = $('<div class="flex float-right gap-4"></div>');
-    fetchButton('button', 'btnCloseEditTeam', 'Close', 'w-32', '', '', '', '').then(function(button) {
+    const btnContainer = $('<div class="flex float-right gap-4 mt-4"></div>');
+    fetchButton('button', 'btnCloseEditTeam', 'Close', 'w-32', 'ri-close-circle-line', '', '', '').then(function(button) {
         // Create a container for the button with absolute positioning
         btnContainer.append(button);
+    }).then(function(button) {
+        $('#btnCloseEditTeam').click(function() {
+            $('#teamEdit').remove();
+        });
     });
-    fetchButton('button', 'btnSaveEditTeam', 'Save', 'w-32', '', '', '', 'Success').then(function(button) {
+    fetchButton('button', 'btnUpdateEditTeam', 'Update', 'w-32', 'ri-save-line', '', '', 'Success').then(function(button) {
         // Create a container for the button with absolute positioning
         btnContainer.append(button);
 
         // Append the button container to the main container
-        teamEdit.append(btnContainer);
-    });
+        editTable.append(btnContainer);
+    }).then(function(button) {
+        $('#btnUpdateEditTeam').click(function() {
+            updateTeam(teamId);
+        });
 
+    });
 
     editTable.append(tbody);
     teamEdit.append(editTable);
+    $(triggeringElement).after(teamEdit);
 }
 
+function getUsers(){
+    return $.ajax({
+        url: '/user/getusers',
+        type: 'GET',
+        success: function (data) {
+            users = data;
+        },
+
+        error: function(data) {
+            if (data.responseJSON && data.responseJSON.redirect) {
+                window.location.href = data.responseJSON.redirect;
+            }
+            console.log("Error fetching users:", data.responseJSON);
+        }
+    })
+}
+
+/**
+ * Updates the data of a Team
+ */
+function updateTeam(teamId){
+    const id = teamId
+    const teamName = $("#editdisplayname").val();
+    const teamType = $("#editteamtype_fk").val();
+    const teamWeight = $("#editweight").val();
+    const teamManager = $("#editaccount_fk").val();
+    const discordnotificationdays = $("#editdiscordnotificationdays").val();
+    const salePercentage = $("#editsalepercentage").val();
+
+    $.ajax({
+        url: "/team/updateteam",
+        type: "POST",
+        dataType: "json",
+        data: {
+            id: id,
+            teamName: teamName,
+            teamType: teamType,
+            teamWeight: teamWeight,
+            teamManager: teamManager,
+            discordnotificationdays: discordnotificationdays,
+            salePercentage: salePercentage
+        },
+        success: function () {
+            loadTeams();
+            displaySuccess("Updated team!");
+            buildTeamsTable()
+        },
+        error: function (data) {
+            if (data.responseJSON && data.responseJSON.redirect) {
+                window.location.href = data.responseJSON.redirect;
+            }
+            console.log("Error updating team:", data.responseJSON);
+            displayError("Error updating Team! Try reloading the page.")
+        }
+    });
+}
