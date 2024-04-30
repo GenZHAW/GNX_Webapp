@@ -99,8 +99,12 @@ function buildTeamsTable(teams){
                 const rowElement = $(this).closest('tr');
                 displayEditTeam(team, rowElement);
             });
+        const btnDeleteTeam = $("<a href='#' id='btnDeleteTeam'><i class='ri-delete-bin-line ri-lg text-turquoise'></i></a>")
+            .click(function(e) {
+                deleteTeam(e, team.id);
+            });
 
-        tr.append(tdName).append(tdType).append(tdManager).append(tdNotificationDays).append(tdButton.append(editTeam));
+        tr.append(tdName).append(tdType).append(tdManager).append(tdNotificationDays).append(tdButton.append(editTeam).append(btnDeleteTeam));
         tableBody.append(tr);
     });
 }
@@ -124,8 +128,12 @@ function buildTeamTypesTable(teamTypes){
                 const rowElement = $(this).closest('tr');
                 displayEditTeamType(teamType, teamType.id, rowElement);
             });
+        const btnDeleteTeamType = $("<a href='#' id='btnDeleteTeamType'><i class='ri-delete-bin-line ri-lg text-turquoise'></i></a>")
+            .click(function(e) {
+                deleteTeamType(e, teamType.id);
+            });
 
-        tr.append(tdName).append(tdDpName).append(tdButton.append(editTeamType));
+        tr.append(tdName).append(tdDpName).append(tdButton.append(editTeamType).append(btnDeleteTeamType));
         tableBody.append(tr);
     });
 }
@@ -593,10 +601,12 @@ function updateTeamType(teamTypeId){
             displayName: displayName
         },
         success: function () {
-            loadTeamTypes();
             displaySuccess("Updated team type!");
-            $("#teamTypeEdit").hide();
-            buildTeamTypesTable()
+            loadTeamTypes().then(function(data) {
+                allTeamTypes = data;
+                sliceTableForPage(currentPageTeams, allTeamTypes);
+            });
+
         },
         error: function (data) {
             if (data.responseJSON && data.responseJSON.redirect) {
@@ -608,3 +618,76 @@ function updateTeamType(teamTypeId){
     });
 }
 
+/**
+ * Deletes a Team
+ */
+function deleteTeam(e, id) {
+    const popup = new Popup("popup-containerTeamDel");
+    popup.displayYesNoPopup("/res/others/alert.png", "Warning", "Are you sure you want to delete this team?", "Yes", "No", "btnTeamDelYes", "btnTeamDelNo");
+    popup.open(e);
+    $(document).off('click', '#btnTeamDelYes').on('click', '#btnTeamDelYes', function(e) {
+        $.ajax({
+            url: "/team/deleteteam",
+            type: "POST",
+            dataType: "json",
+            data: {
+                id: id
+            },
+            success: function () {
+                displaySuccess("Deleted team!");
+                loadTeams().then(function(data) {
+                    allTeams = data;
+                    sliceTableForPage(currentPageTeams, allTeams);
+                });
+                popup.close(e);
+            },
+            error: function (data) {
+                if (data.responseJSON && data.responseJSON.redirect) {
+                    window.location.href = data.responseJSON.redirect;
+                }
+                console.log("Error deleting team:", data.responseJSON);
+                displayError("Error deleting Team! Try reloading the page.")
+            }
+        });
+    });
+    $(document).off('click', '#btnTeamDelNo').on('click', '#btnTeamDelNo', function(e) {
+        popup.close(e);
+    });
+}
+
+/**
+ * Deletes a Team
+ */
+function deleteTeamType(e, id) {
+    const popup = new Popup("popup-containerTeamTypeDel");
+    popup.displayYesNoPopup("/res/others/alert.png", "Warning", "Are you sure you want to delete this team type?", "Yes", "No", "btnTeamTypeDelYes", "btnTeamTypeDelNo");
+    popup.open(e);
+    $(document).off('click', '#btnTeamTypeDelYes').on('click', '#btnTeamTypeDelYes', function(e) {
+        $.ajax({
+            url: "/teamtype/deleteteamtype",
+            type: "POST",
+            dataType: "json",
+            data: {
+                id: id
+            },
+            success: function () {
+                displaySuccess("Deleted team type!");
+                loadTeamTypes().then(function(data) {
+                    allTeamTypes = data;
+                    sliceTableForPage(currentPageTeams, allTeamTypes);
+                });
+                popup.close(e);
+            },
+            error: function (data) {
+                if (data.responseJSON && data.responseJSON.redirect) {
+                    window.location.href = data.responseJSON.redirect;
+                }
+                console.log("Error deleting team type:", data.responseJSON);
+                displayError("Error deleting Team type! Try reloading the page.")
+            }
+        });
+    });
+    $(document).off('click', '#btnTeamTypeDelNo').on('click', '#btnTeamTypeDelNo', function(e) {
+        popup.close(e);
+    });
+}

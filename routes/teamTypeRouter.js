@@ -61,6 +61,24 @@ router.get('/getteamtypeOptions', checkNotAuthenticated, permissionCheck('teamma
 });
 
 /**
+ * POST route for deleting a team
+ */
+router.post('/deleteteamtype', checkNotAuthenticated, permissionCheck('teammanagement', 'canOpen'), function (req, res) {
+    const formData = req.body.id;
+
+    deleteTeamType(formData).then((result) => {
+        if (result.rowCount === 0) {
+            res.status(500).send({message: "There was an error deleting the team type! Please try again later."});
+        }else {
+            logMessage(`User ${req.user.username} deleted the team type ${formData.name}`,LogLevel.INFO,req.user.id)
+            res.status(200).send({message: "Team type deleted successfully"});
+        }
+    }).catch(() => {
+        res.status(500).send({message: "There was an error deleting the team type! Please try again later."});
+    });
+});
+
+/**
  * Get all team types
  * @returns {Promise<*>} a Promise that resolves to an array of team types
  */
@@ -100,5 +118,12 @@ async function getTeamTypeOptions() {
 
     return options;
 }
-
+/**
+ * Delete a team type
+ * @param id the id of the team type to delete
+ * @returns {Promise<number>} a Promise that resolves to the id of the new team
+ */
+function deleteTeamType(id) {
+    return pool.query(`DELETE FROM teamtype WHERE id = $1`,[id]);
+}
 module.exports = router;
