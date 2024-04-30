@@ -349,19 +349,14 @@ function getTeamTypeDisplayName(id) {
  * @param triggeringElement
  */
 function displayEditTeam(team, triggeringElement) {
-    teamId = team.id;
+    const teamBeforeUpdate = { ...team }; // Creating a copy to send the original values when not updating all values
     delete team.id;
     // Creating a new table row to hold the editing form
     if($('#teamEdit').length > 0) {
         $('#teamEdit').remove();
     }
-
-
-    let teamEdit = $('<tr id="teamEdit"></tr>');
-    teamEdit.empty();
-
+    const teamEdit = $('<tr id="teamEdit"></tr>');
     const editTable = $('<td colspan="5"></td>');
-
     const tbody = $('<div class="flex flex-wrap text-almost-white font-montserrat gap-2"></div>');
 
     for (const [key, value] of Object.entries(team)) {
@@ -384,47 +379,28 @@ function displayEditTeam(team, triggeringElement) {
             // Create a table cell for the key with a bold font and a specific width
             tdKey = $('<label class="font-montnserrat text-base text-almost-white"></label>').text("Team Type");
 
-            const optionsWithValues = allTeamTypes.map(teamType => {
-                return {
-                    text: teamType.name,   // Add new 'text' property, copying the value from 'name'
-                    value: teamType.id     // Add new 'value' property, copying the value from 'id'
-                };
-            });
+            const teamTypeDropDown = allTeamTypes.map(teamType => ({ text: teamType.name, value: teamType.id }));
 
-            let defaultOption = optionsWithValues.find(teamType => teamType.value === inputValue);
+            const defaultOption = teamTypeDropDown.find(teamType => teamType.value === inputValue);
 
-            // Convert optionsWithValues to a JSON string to be used in the fetchDropdown function
-            const optionsJson = JSON.stringify(optionsWithValues);
-            fetchDropdown(fieldName, 'w-52',optionsJson ,defaultOption.text).then(function(field) {
+            fetchDropdown(fieldName, 'w-52',JSON.stringify(teamTypeDropDown), defaultOption.text).then(function(field) {
                 tdValue.append(field);
             });
         }
         else if(key === 'account_fk'){
             tdKey = $('<label class="font-montnserrat text-base text-almost-white"></label>').text("Team Manager");
-            const optionsWithValues = users.map(user => {
-                return {
-                    text: user.username,   // Add new 'text' property, copying the value from 'name'
-                    value: user.id     // Add new 'value' property, copying the value from 'id'
-                };
-            });
 
-            let defaultOption = optionsWithValues.find(user => user.value === inputValue);
-            defaultOption = defaultOption ? defaultOption.text : 'No Manager';
-            // Convert optionsWithValues to a JSON string to be used in the fetchDropdown function
-            const optionsJson = JSON.stringify(optionsWithValues);
-            fetchDropdown(fieldName, 'w-52',optionsJson , defaultOption).then(function(field) {
+            // Map users to new objects with text and value properties, adding a default option
+            const userDropDown = users.map(user => ({ text: user.username, value: user.id })).concat({ text: "No Manager", value: 0 });
+
+            // Find the default option matching the input value or use "No Manager" as default
+            const defaultOption = userDropDown.find(user => user.value === inputValue) || { text: "No Manager", value: 0 };
+
+            // Fetch and append the dropdown to tdValue
+            fetchDropdown(fieldName, 'w-52', JSON.stringify(userDropDown), defaultOption.text).then(field => {
                 tdValue.append(field);
             });
         }
-
-        else if(key === 'discordnotificationdays')
-        {
-            tdKey = $('<label class="font-montnserrat text-base text-almost-white"></label>').text("Discord Notifications");
-            fetchEntryField('text', team.displayname + "_"+ key, fieldName, 'w-64', inputValue).then(function(field) {
-                tdValue.append(field);
-            });
-        }
-
         else{
             // Create a table cell for the key with a bold font and a specific width
             tdKey = $('<label class="font-montnserrat text-base text-almost-white"></label>').text(key.charAt(0).toUpperCase() + key.slice(1));
@@ -445,22 +421,19 @@ function displayEditTeam(team, triggeringElement) {
     fetchButton('button', 'btnCloseEditTeam', 'Close', 'w-32', 'ri-close-circle-line', '', '', '').then(function(button) {
         // Create a container for the button with absolute positioning
         btnContainer.append(button);
-    }).then(function(button) {
-        $('#btnCloseEditTeam').click(function() {
-            $('#teamEdit').remove();
-        });
-    });
+    })
     fetchButton('button', 'btnUpdateEditTeam', 'Update', 'w-32', 'ri-save-line', '', '', 'Success').then(function(button) {
         // Create a container for the button with absolute positioning
         btnContainer.append(button);
-
         // Append the button container to the main container
         editTable.append(btnContainer);
     }).then(function(button) {
         $('#btnUpdateEditTeam').click(function() {
-            updateTeam(teamId);
+            updateTeam(teamBeforeUpdate);
         });
-
+        $('#btnCloseEditTeam').click(function() {
+            $('#teamEdit').remove();
+        });
     });
 
     editTable.append(tbody);
@@ -488,14 +461,18 @@ function getUsers(){
 /**
  * Updates the data of a Team
  */
-function updateTeam(teamId){
-    const id = teamId
-    const teamName = $("#editdisplayname").val();
-    const teamType = $("#editteamtype_fk").val();
-    const teamWeight = $("#editweight").val();
-    const teamManager = $("#editaccount_fk").val();
-    const discordnotificationdays = $("#editdiscordnotificationdays").val();
-    const salePercentage = $("#editsalepercentage").val();
+function updateTeam(teamBeforeUpdate){
+    const id = teamBeforeUpdate.id;
+    const teamName = $("#editdisplayname").val() || teamBeforeUpdate.displayname;
+    const teamType = $("#editteamtype_fk").val() || teamBeforeUpdate.teamtype_fk;
+    const teamWeight = $("#editweight").val() || teamBeforeUpdate.weight;
+    let teamManager = $("#editaccount_fk").val() || teamBeforeUpdate.account_fk;
+    if(teamManager === null || teamManager === "No Manager"){
+        teamManager = 0;
+    }
+    const discordnotificationdays = $("#editdiscordnotificationdays").val() || teamBeforeUpdate.discordnotificationdays;
+    const salePercentage = $("#editsalepercentage").val() || teamBeforeUpdate.salepercentage;
+
 
     $.ajax({
         url: "/team/updateteam",
