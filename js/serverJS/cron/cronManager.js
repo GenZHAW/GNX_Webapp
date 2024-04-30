@@ -3,6 +3,7 @@
  */
 const cron = require('node-cron');
 const {pool} = require("../database/dbConfig");
+const {logMessage} = require("../logger");
 
 let availableCronJobs = [{name: 'cSendLoLStatsInfo', id: 1}, {name: 'cSendValorantStatsInfo', id: 3}];
 let taskList = [];
@@ -26,17 +27,70 @@ async function registerCronJobs() {
                 updateLastExecTime(cronJob.id);
             };
 
-            const scheduledTask = cron.schedule(cronJob.executioninterval, taskFunction, {
-                scheduled: true
-            });
-
-            taskList.push({id: cronJob.id, name: cronJobDefinition.name, task: scheduledTask, execute: taskFunction});
+            try{
+                const scheduledTask = cron.schedule(cronJob.executioninterval, taskFunction, {
+                    scheduled: true
+                });
+                taskList.push({id: cronJob.id, name: cronJobDefinition.name, task: scheduledTask, execute: taskFunction});
+            }catch (e){
+                console.error(`Error while scheduling cronjob with id ${cronJob.id}: ${e}`);
+                logMessage(`Error while scheduling cronjob with id ${cronJob.id}: ${e}`, 'ERROR')
+            }
         }else{
             console.error(`Cronjob with id ${cronJob.cronjobdefinition_fk} does not exist!`)
         }
     });
 
     console.log('Successfully registered ' + taskList.length + ' cronjobs!');
+}
+
+/**
+ * Reschedules an existing cron job at runtime based on its ID.
+ * @param {number} jobId - The ID of the job to reschedule.
+ * @param {object} cronJob - The cron job object with updated properties.
+ */
+function rescheduleCronJob(jobId, cronJob) {
+    const jobIndex = taskList.findIndex(job => job.id == jobId);
+    if (jobIndex === -1) {
+        console.error(`Cronjob with ID ${jobId} does not exist in the task list.`);
+        return { message: 'Cronjob not found.', code: -1 };
+    }
+
+    // Stop the current cron job before making updates
+    const job = taskList[jobIndex];
+    job.task.stop();
+
+    // Rebuild the task with potentially updated parameters
+    const cronJobDefinition = availableCronJobs.find(availableCronJob => availableCronJob.id === cronJob.cronjobdefinition_fk);
+    if (!cronJobDefinition) {
+        console.error(`Cronjob definition with ID ${cronJob.cronjobdefinition_fk} does not exist.`);
+        return { message: 'Cronjob definition not found.', code: -1 };
+    }
+
+    const TaskClass = require(`./jobs/${cronJobDefinition.name}`);
+    let taskInstance = new TaskClass(cronJob);
+    taskInstance = setTaskParams(taskInstance, cronJob, cronJobDefinition.name);
+
+    const taskFunction = () => {
+        taskInstance.execute();
+        updateLastExecTime(jobId);
+    };
+
+    // Schedule the updated task
+    job.task = cron.schedule(cronJob.executioninterval, taskFunction, {
+        scheduled: true
+    });
+
+    // Update the task list entry
+    taskList[jobIndex] = {
+        ...job,
+        task: job.task,
+        execute: taskFunction,
+        name: cronJobDefinition.name
+    };
+
+    console.log(`Cronjob ${cronJobDefinition.name} with ID ${jobId} has been rescheduled to new interval: ${cronJob.executioninterval}.`);
+    return { message: 'Cronjob rescheduled successfully.', code: 0 };
 }
 
 /**
@@ -159,7 +213,7 @@ function setTaskParams(taskClass, cronJob, cronJobName){
  * @returns {Promise<QueryResult<any>>}
  */
 function getExistingCronjobs(){
-    return pool.query('SELECT *, (SELECT displayname FROM cronjobdefinition WHERE cronjobdefinition.id = cronjobs.cronjobdefinition_fk) FROM cronjobs');
+    return pool.query('SELECT *, (SELECT displayname FROM cronjobdefinition WHERE cronjobdefinition.id = cronjobs.cronjobdefinition_fk) FROM cronjobs ORDER BY id');
 }
 
-module.exports = {registerCronJobs, addCronJob, getExistingCronjobs, removeCronJob, runCronJob};
+module.exports = {registerCronJobs, addCronJob, getExistingCronjobs, removeCronJob, runCronJob, rescheduleCronJob};
