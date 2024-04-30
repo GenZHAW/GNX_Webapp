@@ -429,16 +429,18 @@ function displayEditTeam(team, triggeringElement) {
 
     }
     const btnContainer = $('<div class="flex float-right gap-4 mt-4"></div>');
-    fetchButton('button', 'btnCloseEditTeam', 'Close', 'w-32', 'ri-close-circle-line', '', '', '').then(function(button) {
-        // Create a container for the button with absolute positioning
-        btnContainer.append(button);
-    })
-    fetchButton('button', 'btnUpdateEditTeam', 'Update', 'w-32', 'ri-save-line', '', '', 'Success').then(function(button) {
-        // Create a container for the button with absolute positioning
-        btnContainer.append(button);
-        // Append the button container to the main container
+
+// Fetch the first button and append it to the container.
+    fetchButton('button', 'btnCloseEditTeam', 'Close', 'w-32', 'ri-close-circle-line').then(function(btnCloseEdit) {
+        btnContainer.append(btnCloseEdit);
+
+        // Only after the first button is appended, fetch the second button.
+        return fetchButton('button', 'btnUpdateEditTeam', 'Update', 'w-32', 'ri-save-line', '', '', 'Success');
+    }).then(function(btnUpdateEdit) {
+        btnContainer.append(btnUpdateEdit);
         editTable.append(btnContainer);
-    }).then(function(button) {
+    }).then(function() {
+        // Set up event handlers after all buttons have been added to the DOM.
         $('#btnUpdateEditTeam').click(function() {
             updateTeam(teamBeforeUpdate);
         });
@@ -446,6 +448,7 @@ function displayEditTeam(team, triggeringElement) {
             $('#teamEdit').remove();
         });
     });
+
 
     editTable.append(tbody);
     teamEdit.append(editTable);
@@ -500,16 +503,18 @@ function displayEditTeamType(teamType, id, triggeringElement) {
 
     }
     const btnContainer = $('<div class="flex float-right gap-4 mt-4"></div>');
-    fetchButton('button', 'btnCloseEditTeamType', 'Close', 'w-32', 'ri-close-circle-line', '', '', '').then(function(button) {
-        // Create a container for the button with absolute positioning
-        btnContainer.append(button);
-    })
-    fetchButton('button', 'btnUpdateEditTeamType', 'Update', 'w-32', 'ri-save-line', '', '', 'Success').then(function(button) {
-        // Create a container for the button with absolute positioning
-        btnContainer.append(button);
-        // Append the button container to the main container
+
+// Fetch the first button and append it to the container.
+    fetchButton('button', 'btnCloseEditTeamType', 'Close', 'w-32', 'ri-close-circle-line').then(function(btnCloseEdit) {
+        btnContainer.append(btnCloseEdit);
+
+        // Only after the first button is appended, fetch the second button.
+        return fetchButton('button', 'btnUpdateEditTeamType', 'Update', 'w-32', 'ri-save-line', '', '', 'Success');
+    }).then(function(btnUpdateEdit) {
+        btnContainer.append(btnUpdateEdit);
         editTable.append(btnContainer);
-    }).then(function(button) {
+    }).then(function() {
+        // Set up event handlers after all buttons have been added to the DOM.
         $('#btnUpdateEditTeamType').click(function() {
             updateTeamType(id);
         });
@@ -517,6 +522,7 @@ function displayEditTeamType(teamType, id, triggeringElement) {
             $('#teamTypeEdit').remove();
         });
     });
+
 
     editTable.append(tbody);
     teamTypeEdit.append(editTable);
