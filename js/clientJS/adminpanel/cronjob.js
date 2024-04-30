@@ -50,7 +50,7 @@ async function buildTable(data) {
 
         const tr = $("<tr></tr>");
         const tdId = $("<td></td>").text(element.id)
-        const tdType = $("<td></td>").text(element.displayname).addClass('hidden sm:table-cell overflow-hidden whitespace-nowrap max-w-0 truncate md:overflow-visible md:whitespace-normal sm:max-w-none sm:w-56');
+        const tdType = $("<td></td>").text(element.displayname).addClass('hidden sm:table-cell overflow-hidden whitespace-nowrap max-w-0 truncate');
         const tdName = $("<td></td>").text(element.name).addClass('overflow-hidden whitespace-nowrap max-w-0 truncate md:overflow-visible md:whitespace-normal sm:max-w-none sm:w-64');
         const tdInterval = $("<td></td>").text(element.executioninterval).addClass('hidden xl:table-cell')
         const tdExec = $("<td></td>").text(lastExecTime).addClass('hidden xl:table-cell')

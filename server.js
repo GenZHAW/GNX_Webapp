@@ -35,7 +35,6 @@ const wooCommereceRouter = require('./routes/wooCommerceRouter.js');
 const patchnotesRouter = require('./routes/patchnotesRouter.js');
 const riot = require('./js/serverJS/riot.js');
 const {logMessage, LogLevel} = require('./js/serverJS/logger.js');
-const {sendTrainingDataReminders, sendGamedayReportReminder} = require("./js/serverJS/discordBot");
 const trainingNotesRouter = require("./routes/trainingNotesRouter");
 const gamedayRouter = require("./routes/gamedayRouter");
 const cronjobRouter = require("./routes/cronjobRouter");
@@ -46,7 +45,6 @@ const cronManager = require('./js/serverJS/cron/cronManager.js');
  * MIDDLEWARE
  */
 app.set('view engine', 'ejs');
-console.log(__dirname);
 app.use('/dist', express.static(__dirname + '/dist'));
 app.use('/css', express.static(__dirname + '/css'));
 app.use('/fonts', express.static(__dirname + '/fonts'));
@@ -90,7 +88,7 @@ app.use(passport.session());
 app.use(passport.initialize());
 
 /**
- * CLEAN UP JOB FOR EXPIRED SESSIONS
+ * CLEAN UP JOB FOR EXPIRED SESSIONS (SYSTEM CRON JOB)
  */
 cron.schedule('0 3 * * *', function() {
     pool.query('DELETE FROM "session" WHERE "expire" < NOW() OR "sess"::jsonb ->> \'passport\' IS NULL', (err) => {
@@ -110,7 +108,7 @@ cron.schedule('0 3 * * *', function() {
 wooCommerceIntegration.updateSubscriptionTable();
 
 /**
- * Get the newest DDragonData from the Riot API every morning at 3:00 AM
+ * Get the newest DDragonData from the Riot API every morning at 3:00 AM (SYSTEM CRON JOB)
  */
 cron.schedule('0 3 * * *', async function() {
     // Create the file path by combining the folder path and file name
@@ -143,18 +141,7 @@ cron.schedule('0 3 * * *', async function() {
 });
 
 /**
- * Sends discord reminders for inserting training data every morning at 10:00 AM
- */
-//*/3 * * * *
-cron.schedule('0 10 * * *', function() {
-    console.log("Sending training data reminders...");
-    sendTrainingDataReminders();
-    console.log("Sending Gamedayreport reminders...");
-    sendGamedayReportReminder();
-});
-
-/**
- * Updates the Subscription Table every 30 minutes
+ * Updates the Subscription Table every 30 minutes (SYSTEM CRON JOB)
  */
 cron.schedule('*/30 * * * *', function() {
     updateSubscriptionTable();

@@ -57,7 +57,7 @@
 
     <!-- CRONJOB LIST -->
     <div class="bg-grey-level2 mt-4 px-4 py-2 hidden" id="cronList">
-        <%- include('../../components/table', {id: 'cronTable', bodyId: 'cronData', headers: [{text: 'ID', width: '50px'}, {text: 'Type', display: 'sm'}, {text: 'Name', width: 'w-full'}, {text: 'Interval', width: 'w-full', display: 'xl'}, {text: 'Last Execution', width: 'w-full', display: 'xl'}, {text: 'Actions', width: '100px'}]}) %>
+        <%- include('../../components/table', {id: 'cronTable', bodyId: 'cronData', headers: [{text: 'ID', width: '50px'}, {text: 'Type', display: 'sm', width: '240px'}, {text: 'Name', width: 'w-full'}, {text: 'Interval', width: 'w-full', display: 'xl'}, {text: 'Last Execution', width: 'w-full', display: 'xl'}, {text: 'Actions', width: '100px'}]}) %>
     </div>
 
     <div id="loading" class="flex justify-center items-center mt-32">

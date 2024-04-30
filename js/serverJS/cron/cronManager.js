@@ -5,7 +5,8 @@ const cron = require('node-cron');
 const {pool} = require("../database/dbConfig");
 const {logMessage} = require("../logger");
 
-let availableCronJobs = [{name: 'cSendLoLStatsInfo', id: 1}, {name: 'cSendValorantStatsInfo', id: 3}];
+let availableCronJobs = [{name: 'cSendLoLStatsInfo', id: 1}, {name: 'cSendValorantStatsInfo', id: 3},
+                                                    {name: 'cSendTrainingDataReminder', id: 4}, {name: 'cSendGamedayReportReminder', id: 5}];
 let taskList = [];
 
 /**
@@ -168,17 +169,22 @@ async function addCronJob(newCronJob) {
     const TaskClass = require(`./jobs/${cronJobDefinition.name}`);
     let taskInstance = new TaskClass(newCronJob);
     taskInstance = setTaskParams(taskInstance, newCronJob, cronJobDefinition.name);
+    const taskFunction = () => {
+        taskInstance.execute();
+        updateLastExecTime(newCronJob.id);
+    };
 
     const scheduledTask = cron.schedule(newCronJob.executioninterval, () => {
-        taskInstance.execute();
+        taskFunction()
     }, {
         scheduled: true
     });
 
     taskList.push({
-        id: taskList.length,  // Dynamically assigns the next available ID
+        id: newCronJob.id,
         name: cronJobDefinition.name,
-        task: scheduledTask
+        task: scheduledTask,
+        execute: taskFunction
     });
 
     console.log(`Registered new cronjob: ${cronJobDefinition.name}`);
