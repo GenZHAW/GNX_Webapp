@@ -97,7 +97,7 @@ function buildTeamsTable(teams){
             .click(function() {
                 $('#teamEdit').removeClass('hidden');
                 const rowElement = $(this).closest('tr');
-                displayEditTeam(team, rowElement);
+                displayEditTeam(team, team.id, rowElement);
             });
         const btnDeleteTeam = $("<a href='#' id='btnDeleteTeam'><i class='ri-delete-bin-line ri-lg text-turquoise'></i></a>")
             .click(function(e) {
@@ -359,7 +359,7 @@ function getTeamTypeDisplayName(id) {
  * @param team
  * @param triggeringElement
  */
-function displayEditTeam(team, triggeringElement) {
+function displayEditTeam(team, teamId, triggeringElement) {
     const teamBeforeUpdate = { ...team }; // Creating a copy to send the original values when not updating all values
     delete team.id;
     // Creating a new table row to hold the editing form
@@ -442,7 +442,7 @@ function displayEditTeam(team, triggeringElement) {
     }).then(function() {
         // Set up event handlers after all buttons have been added to the DOM.
         $('#btnUpdateEditTeam').click(function() {
-            updateTeam(teamBeforeUpdate);
+            updateTeam(teamId, teamBeforeUpdate);
         });
         $('#btnCloseEditTeam').click(function() {
             $('#teamEdit').remove();
@@ -549,8 +549,8 @@ function getUsers(){
 /**
  * Updates the data of a Team
  */
-function updateTeam(teamBeforeUpdate){
-    const id = teamBeforeUpdate.id;
+function updateTeam(teamId, teamBeforeUpdate){
+    const id = teamId
     const teamName = $("#editdisplayname").val() || teamBeforeUpdate.displayname;
     const teamType = $("#editteamtype_fk").val() || teamBeforeUpdate.teamtype_fk;
     const teamWeight = $("#editweight").val() || teamBeforeUpdate.weight;
@@ -576,9 +576,11 @@ function updateTeam(teamBeforeUpdate){
             salePercentage: salePercentage
         },
         success: function () {
-            loadTeams();
             displaySuccess("Updated team!");
-            buildTeamsTable()
+            loadTeams().then(function(data) {
+                allTeams = data;
+                sliceTableForPage(currentPageTeams, allTeams);
+            });
         },
         error: function (data) {
             if (data.responseJSON && data.responseJSON.redirect) {
