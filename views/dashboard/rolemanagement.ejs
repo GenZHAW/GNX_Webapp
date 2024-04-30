@@ -2,52 +2,50 @@
 
 <div class="m-4 md:m-8">
 
-    <div class="flex justify-between">
-        <p class="font-orbitron text-almost-white text-2xl font-semibold">Role Management</p>
-        <%- include('../components/buttondefault', {type: 'button', id: 'newRole', text: 'Create new Role', icon: 'ri-add-circle-line', btnType: 'Success'}) %>
+    <div class="flex flex-col md:flex-row md:justify-between">
+        <p class="font-orbitron text-almost-white text-2xl font-semibold mb-4 md:mb-0">Role Management</p>
+        <%- include('../components/buttondefault', {type: 'button', id: 'newRole', text: 'Create new Role', icon: 'ri-add-circle-line', btnType: 'Success', width: 'w-52'}) %>
     </div>
 
     <div class="bg-grey-level2 mt-4 p-4">
-        <%- include('../components/table', {id: 'roleTable', bodyId: 'roleData', headers: [{text: 'ID'}, {text: 'Name'}, {text: 'Description'}, {text: 'Permissions'}]}) %>
+        <%- include('../components/table', {id: 'roleTable', bodyId: 'roleData', headers: [{text: 'ID'}, {text: 'Name'}, {text: 'Description'}, {text: 'Permissions', display: 'md'}]}) %>
     </div>
 
 </div>
 
 <div id="editFormDefinition" style="display: none">
     <form id="editFormDefinition" class="update-form" action="/roletype/update" method="POST">
-    <div class="flex flex-wrap space-x-4" id="editForm">
-        <div class="flex flex-col space-y-4">
-            <div class="space-y-2">
-                <label for="editName" class="font-montnserrat text-base text-almost-white">Name</label>
-                <%- include('../components/entryfield', {type: 'text', name: 'editName', id: 'editName'}) %>
-            </div>
-            <div class="space-y-2">
-                <label for="editDescription" class="font-montserrat text-base text-almost-white">Description</label>
-                <%- include('../components/entryfield', {type: 'text', name: 'editDescription', id: 'editDescription'}) %>
-            </div>
-        </div>
-        <div class="flex space-x-4">
-            <input type="number" value="" style="display: none" id="roleTypeId" name="roleTypeId"/>
-            <div class="flex flex-col">
-                <label for="unassignedPermissions" class="font-montserrat text-base text-almost-white block mb-2">Unassigned Permissions</label>
-                <select id="unassignedPermissions" multiple class="w-64 h-[250px] focus:outline-none focus:ring-0"></select>
-                <div class="mt-2 flex justify-end">
-                    <%- include('../components/buttondefault', {type: 'button', id: 'assign', text: 'assign', icon: 'ri-arrow-right-line', btnType: 'Success', customClasses: 'assignBtn'}) %>
+        <div class="flex flex-wrap space-x-4 w-full" id="editForm">
+            <div class="flex flex-col space-y-4">
+                <div class="space-y-2">
+                    <label for="editName" class="font-montserrat text-base text-almost-white">Name</label>
+                    <%- include('../components/entryfield', {type: 'text', name: 'editName', id: 'editName'}) %>
+                </div>
+                <div class="space-y-2">
+                    <label for="editDescription" class="font-montserrat text-base text-almost-white">Description</label>
+                    <%- include('../components/entryfield', {type: 'text', name: 'editDescription', id: 'editDescription'}) %>
                 </div>
             </div>
-            <div class="flex flex-col">
-                <label for="assignedPermissions" class="font-montserrat text-base text-almost-white block mb-2">Assigned Permissions</label>
-                <select id="assignedPermissions" multiple class="w-64 h-[250px] focus:outline-none focus:ring-0"></select>
-                <div class="mt-2 flex">
-                    <%- include('../components/buttondefault', {type: 'button', id: 'deAssign', text: 'de-assign', icon: 'ri-arrow-left-s-line', iconPos: 'left',  btnType: 'Error', customClasses: 'deassignBtn'}) %>
+            <div class="flex flex-1 min-w-0 space-x-4">
+                <div class="flex flex-col flex-1">
+                    <label for="unassignedPermissions" class="font-montserrat text-base text-almost-white block mb-2">Unassigned Permissions</label>
+                    <select id="unassignedPermissions" multiple class="w-full h-[250px] focus:outline-none focus:ring-0"></select>
+                    <div class="mt-2 flex justify-end">
+                        <%- include('../components/buttondefault', {type: 'button', id: 'assign', text: 'assign', icon: 'ri-arrow-right-s-line', btnType: 'Success', customClasses: 'assignBtn'}) %>
+                    </div>
+                </div>
+                <div class="flex flex-col flex-1">
+                    <label for="assignedPermissions" class="font-montserrat text-base text-almost-white block mb-2">Assigned Permissions</label>
+                    <select id="assignedPermissions" multiple class="w-full h-[250px] focus:outline-none focus:ring-0"></select>
+                    <div class="mt-2 flex">
+                        <%- include('../components/buttondefault', {type: 'button', id: 'deAssign', text: 'de-assign', icon: 'ri-arrow-left-s-line', iconPos: 'left', btnType: 'Error', customClasses: 'deassignBtn'}) %>
+                    </div>
+                </div>
+                <div class="flex flex-col flex-1 justify-end items-end">
+                    <%- include('../components/buttondefault', {type: 'submit', id: 'deleteRole', text: 'Update', width: 'w-32', icon: 'ri-check-line'}) %>
                 </div>
             </div>
-            <div class="flex flex-col space-y-2 mt-8">
-                <%- include('../components/buttondefault', {type: 'submit', id: 'deleteRole', text: 'Update'}) %>
-                <%- include('../components/buttondefault', {type: 'button', id: 'updateRole', text: 'Delete'}) %>
-            </div>
         </div>
-    </div>
     </form>
 </div>
 

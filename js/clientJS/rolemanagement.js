@@ -88,13 +88,13 @@ function loadData() {
                 const tdName = $("<td></td>").text(roleType.displayname);
                 const tdId = $("<td></td>").text(roleType.id);
                 const tdDescription = $("<td></td>").text(roleType.description);
-                const tdPermissions = $("<td></td>").text(roleType.permissioncount);
+                const tdPermissions = $("<td></td>").text(roleType.permissioncount).addClass('hidden md:table-cell');
 
                 // Button for editing
                 const tdButton = $("<td></td>");
                 const button = $("<button></button>");
                 button.addClass("flex items-center justify-center");
-                button.append($("<i></i>").addClass("ri-edit-fill ri-xl hover:text-turquoise"));
+                button.append($("<i></i>").addClass("ri-edit-fill ri-lg text-turquoise"));
 
                 // Edit form
                 const editFormRow = $("<tr></tr>").addClass("edit-form hidden");
@@ -210,7 +210,7 @@ function buildPermissionList(data, listRef) {
 
     $.each(data, function (index, value) {
         let optionItem = $('<option></option>');
-        optionItem.text(value.location + " ⯈ " + value.permission);
+        optionItem.text(value.location + " ▶ " + value.permission);
         optionItem.val(value.id);
 
         listContainer.append(optionItem);

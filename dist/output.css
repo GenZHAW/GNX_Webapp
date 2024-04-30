@@ -1353,8 +1353,16 @@ video {
   width: 1px;
 }
 
+.w-screen {
+  width: 100vw;
+}
+
 .min-w-\[270px\] {
   min-width: 270px;
+}
+
+.min-w-0 {
+  min-width: 0px;
 }
 
 .max-w-0 {
@@ -3708,10 +3716,6 @@ input:checked + .slider {
 
   .sm\:w-40 {
     width: 10rem;
-  }
-
-  .sm\:w-56 {
-    width: 14rem;
   }
 
   .sm\:w-64 {
