@@ -120,6 +120,9 @@ function buildTeamTypesTable(teamTypes){
         const tdButton = $("<td class='flex gap-2' ></td>");
         const editTeamType = $("<a href='#' id='editTeamType'><i class='ri-edit-line ri-lg text-turquoise'></i></a>")
             .click(function() {
+                $('#teamTypeEdit').removeClass('hidden');
+                const rowElement = $(this).closest('tr');
+                displayEditTeamType(teamType, teamType.id, rowElement);
             });
 
         tr.append(tdName).append(tdDpName).append(tdButton.append(editTeamType));
@@ -441,6 +444,77 @@ function displayEditTeam(team, triggeringElement) {
     $(triggeringElement).after(teamEdit);
 }
 
+/**
+ * Displays the details of a gameday
+ * @param teamType
+ * @param id
+ * @param triggeringElement
+ */
+function displayEditTeamType(teamType, id, triggeringElement) {
+    delete teamType.id;
+    // Creating a new table row to hold the editing form
+    if($('#teamTypeEdit').length > 0) {
+        $('#teamTypeEdit').remove();
+    }
+    const teamTypeEdit = $('<tr id="teamTypeEdit"></tr>');
+    const editTable = $('<td colspan="5"></td>');
+    const tbody = $('<div class="flex flex-wrap text-almost-white font-montserrat gap-2"></div>');
+
+    for (const [key, value] of Object.entries(teamType)) {
+        fieldName = "edit"+key
+        const tr = $('<div></div>');
+
+        // Default input value
+        let inputValue = value;
+
+        // Check if the input value is empty and replace it with a placeholder
+        if (!inputValue) {
+            inputValue = "";
+        }
+
+        // Create a table cell and append the input element to it
+        const tdValue = $('<div></div>')
+        let tdKey;
+
+        // Create a table cell for the key with a bold font and a specific width
+        tdKey = $('<label class="font-montnserrat text-base text-almost-white"></label>').text(key.charAt(0).toUpperCase() + key.slice(1));
+
+        fetchEntryField('text', teamType.displayname + "_" +key.charAt(0).toUpperCase() + key.slice(1), fieldName, 'w-64',inputValue ).then(function(field) {
+            tdValue.append(field);
+        });
+
+
+        // Append both cells to the table row
+        tr.append(tdKey).append(tdValue);
+
+        // Append the row to the tbody
+        tbody.append(tr);
+
+    }
+    const btnContainer = $('<div class="flex float-right gap-4 mt-4"></div>');
+    fetchButton('button', 'btnCloseEditTeamType', 'Close', 'w-32', 'ri-close-circle-line', '', '', '').then(function(button) {
+        // Create a container for the button with absolute positioning
+        btnContainer.append(button);
+    })
+    fetchButton('button', 'btnUpdateEditTeamType', 'Update', 'w-32', 'ri-save-line', '', '', 'Success').then(function(button) {
+        // Create a container for the button with absolute positioning
+        btnContainer.append(button);
+        // Append the button container to the main container
+        editTable.append(btnContainer);
+    }).then(function(button) {
+        $('#btnUpdateEditTeamType').click(function() {
+            updateTeamType(id);
+        });
+        $('#btnCloseEditTeamType').click(function() {
+            $('#teamTypeEdit').remove();
+        });
+    });
+
+    editTable.append(tbody);
+    teamTypeEdit.append(editTable);
+    $(triggeringElement).after(teamTypeEdit);
+}
+
 function getUsers(){
     return $.ajax({
         url: '/user/getusers',
@@ -501,3 +575,36 @@ function updateTeam(teamBeforeUpdate){
         }
     });
 }
+
+/**
+ * Updates the data of a TeamType
+ */
+function updateTeamType(teamTypeId){
+    const id = teamTypeId;
+    const internalName = $("#editname").val() || teamTypeBeforeUpdate.name;
+    const displayName = $("#editdisplayname").val() || teamTypeBeforeUpdate.displayname;
+    $.ajax({
+        url: "/teamtype/updateteamtype",
+        type: "POST",
+        dataType: "json",
+        data: {
+            id: id,
+            internalName: internalName,
+            displayName: displayName
+        },
+        success: function () {
+            loadTeamTypes();
+            displaySuccess("Updated team type!");
+            $("#teamTypeEdit").hide();
+            buildTeamTypesTable()
+        },
+        error: function (data) {
+            if (data.responseJSON && data.responseJSON.redirect) {
+                window.location.href = data.responseJSON.redirect;
+            }
+            console.log("Error updating team type:", data.responseJSON);
+            displayError("Error updating Team type! Try reloading the page.")
+        }
+    });
+}
+
