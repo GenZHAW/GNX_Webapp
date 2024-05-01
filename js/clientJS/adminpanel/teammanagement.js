@@ -459,10 +459,10 @@ function displayEditTeam(team, teamId, triggeringElement) {
  * Displays the edit view for a team type
  *
  * @param teamType The team type to edit
- * @param teamTypeId The id of the team type
+ * @param typeId The id of the team type
  * @param triggeringElement The element that triggered the edit
  */
-function displayEditTeamType(teamType, teamTypeId, triggeringElement) {
+function displayEditTeamType(teamType, typeId, triggeringElement) {
     // Destructure to exclude 'id' from teamTypeDetails
     const { id: teamTypeId, ...teamTypeDetails } = teamType;
 
@@ -517,7 +517,7 @@ function displayEditTeamType(teamType, teamTypeId, triggeringElement) {
     }).then(function () {
         // Set up event handlers after all buttons have been added to the DOM.
         $('#btnUpdateEditTeamType').click(function () {
-            updateTeamType(teamTypeId); // Now using the passed 'id' directly
+            updateTeamType(typeId); // Now using the passed 'id' directly
         });
         $('#btnCloseEditTeamType').click(function () {
             $('#teamTypeEdit').remove();
