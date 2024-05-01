@@ -355,6 +355,23 @@ function getTeamTypeDisplayName(id) {
     return "Not Found"; // Return a default message if no match is found
 }
 
+function getUsers() {
+    return $.ajax({
+        url: '/user/getusers',
+        type: 'GET',
+        success: function (data) {
+            users = data;
+        },
+
+        error: function (data) {
+            if (data.responseJSON && data.responseJSON.redirect) {
+                window.location.href = data.responseJSON.redirect;
+            }
+            console.log("Error fetching users:", data.responseJSON);
+        }
+    })
+}
+
 /**
  * Displays the details of a gameday
  * @param team
@@ -442,12 +459,7 @@ function displayEditTeam(team, teamId, triggeringElement) {
 }
 
 
-/**
- * Displays the details of a gameday
- * @param teamType
- * @param id
- * @param triggeringElement
- */
+
 /**
  * Displays the details of a gameday
  * @param teamType
