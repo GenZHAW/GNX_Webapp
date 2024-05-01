@@ -6,14 +6,12 @@ const elementsPerPage = 5;
 let users = [];
 
 /**
- * Initializes the page
+ * Initializes the Team management page by loading all resources and setting up the tables and event handlers
  */
 function initPage() {
-    // Use Promise.all to handle both promises concurrently
     Promise.all([loadTeams(), loadTeamTypes()]).then(function (results) {
-        // Assigning results to their respective global variables
-        allTeams = results[0]; // results from loadTeams
-        allTeamTypes = results[1]; // results from loadTeamTypes
+        allTeams = results[0]; // result from loadTeams
+        allTeamTypes = results[1]; // result from loadTeamTypes
         getUsers().then(function () {
             // Display data based on current page indices
             sliceTableForPage(currentPageTeams, allTeams);
@@ -61,9 +59,10 @@ function initPage() {
 }
 
 /**
- * Slices the teamTypes to display only the ones for the current page
- * @param page
- * @param data
+ * Slices the data to display only the data for the current page
+ * After slicing the data it builds the table
+ * @param page The current page index
+ * @param data The data to slice, either allTeams or allTeamTypes
  */
 function sliceTableForPage(page, data) {
     let startIndex = (page - 1) * elementsPerPage;
@@ -79,6 +78,16 @@ function sliceTableForPage(page, data) {
 }
 
 /**
+ * Updates the pagination indicator
+ * @param currentPage The current page index
+ * @param totalPages Total pages available
+ * @param elementName The name of the element to update
+ */
+function updatePaginationIndicator(currentPage, totalPages, elementName) {
+    $('#' + elementName).text(`Page ${currentPage} / ${totalPages}`);
+}
+
+/**
  * Builds the table of the teams
  */
 function buildTeamsTable(teams) {
@@ -91,7 +100,7 @@ function buildTeamsTable(teams) {
         const tdType = $("<td></td>").text(getTeamTypeDisplayName(team.teamtype_fk));
         const tdManager = $("<td></td>").text(getManagerName(team.account_fk));
         const tdNotificationDays = $("<td></td>").text(team.discordnotificationdays);
-        const tdButton = $("<td class='flex gap-2'></td>");
+        const tdButtonContainer = $("<td class='flex gap-2'></td>");
         const editTeam = $("<a href='#' id='editTeam'><i class='ri-edit-line ri-lg text-turquoise'></i></a>")
             .click(function () {
                 const rowElement = $(this).closest('tr');
@@ -104,7 +113,7 @@ function buildTeamsTable(teams) {
                 deleteTeam(e, team.id);
             });
 
-        tr.append(tdName).append(tdType).append(tdManager).append(tdNotificationDays).append(tdButton.append(editTeam).append(btnDeleteTeam));
+        tr.append(tdName).append(tdType).append(tdManager).append(tdNotificationDays).append(tdButtonContainer.append(editTeam).append(btnDeleteTeam));
         tableBody.append(tr);
     });
 }
@@ -121,7 +130,7 @@ function buildTeamTypesTable(teamTypes) {
         const tr = $("<tr></tr>");
         const tdName = $("<td></td>").text(teamType.name)
         const tdDpName = $("<td></td>").text(teamType.displayname);
-        const tdButton = $("<td class='flex gap-2' ></td>");
+        const tdButtonContainer = $("<td class='flex gap-2' ></td>");
         const editTeamType = $("<a href='#' id='editTeamType'><i class='ri-edit-line ri-lg text-turquoise'></i></a>")
             .click(function () {
                 const rowElement = $(this).closest('tr');
@@ -133,23 +142,13 @@ function buildTeamTypesTable(teamTypes) {
                 deleteTeamType(e, teamType.id);
             });
 
-        tr.append(tdName).append(tdDpName).append(tdButton.append(editTeamType).append(btnDeleteTeamType));
+        tr.append(tdName).append(tdDpName).append(tdButtonContainer.append(editTeamType).append(btnDeleteTeamType));
         tableBody.append(tr);
     });
 }
 
 /**
- * Updates the pagination indicator
- * @param currentPage The current page index
- * @param totalPages Total pages available
- * @param elementName The name of the element to update
- */
-function updatePaginationIndicator(currentPage, totalPages, elementName) {
-    $('#' + elementName).text(`Page ${currentPage} / ${totalPages}`);
-}
-
-/**
- * Loads the teams from the database
+ * Loads all teams from the database
  */
 function loadTeams() {
     return $.ajax({
@@ -165,7 +164,7 @@ function loadTeams() {
 }
 
 /**
- * Loads the team types from the database
+ * Loads all team types from the database
  */
 function loadTeamTypes() {
     return $.ajax({
@@ -181,82 +180,7 @@ function loadTeamTypes() {
 }
 
 /**
- * Sets up the createTeam popup
- */
-function setupCreateTeamPopup() {
-    const popupCreateTeam = new Popup("popup-containerCreateTeam");
-
-    let renderedHtml = '';
-    // Add a 'text' property to each item in the array so that the dropdown can display the name
-    const optionsWithValues = allTeamTypes.map(teamType => {
-        return {
-            ...teamType,          // Spread to copy all existing properties
-            text: teamType.name,   // Add new 'text' property, copying the value from 'name'
-            value: teamType.id     // Add new 'value' property, copying the value from 'id'
-        };
-    });
-
-    // Convert optionsWithValues to a JSON string to be used in the fetchDropdown function
-    const optionsJson = JSON.stringify(optionsWithValues);
-
-    $.when(
-        fetchEntryField('text', 'teamname', 'teamName', 'w-52', ''),
-        fetchDropdown('teamType', 'w-52', optionsJson, 'Select Team Type')
-    ).then(function (field1, field2) {
-        renderedHtml += `<label for="teamName" class="input-label">Name</label>`
-        renderedHtml += field1[0];
-        renderedHtml += `<label for="teamType" class="input-label">Description</label>`
-        renderedHtml += field2[0];
-
-        popupCreateTeam.displayInputPopupCustom("/res/others/plus.png", "Create Team", "Create", "btnCreateTeam", renderedHtml);
-
-        $("#createTeam").click(function (e) {
-            $("#teamName").val("");
-            $("#teamType").val("");
-            popupCreateTeam.open(e);
-        });
-
-        $(document).off('click', '#btnCreateTeam').on('click', '#btnCreateTeam', function () {
-            popupCreateTeam.close();
-            createTeam();
-        });
-    });
-}
-
-/**
- * Sets up the createTeamType popup
- */
-function setupCreateTeamTypePopup() {
-    const popupCreateTeamType = new Popup("popup-containerCreateTeamType");
-
-    let renderedHtml = '';
-
-    $.when(
-        fetchEntryField('text', 'teamtypename', 'teamTypeName', 'w-52', ''),
-        fetchEntryField('text', 'teamtypedisplayname', 'teamTypeDisplayName', 'w-52', ''),
-    ).then(function (field1, field2) {
-        renderedHtml += `<label for="teamTypeName" class="input-label">Name</label>`
-        renderedHtml += field1[0];
-        renderedHtml += `<label for="teamTypeDisplayName" class="input-label">Display name</label>`
-        renderedHtml += field2[0];
-
-        popupCreateTeamType.displayInputPopupCustom("/res/others/plus.png", "Create TeamType", "Create", "btnCreateTeamType", renderedHtml);
-
-        $("#createTeamType").click(function (e) {
-            $("#teamTypeName").val("");
-            $("#teamTypeDisplayName").val("");
-            popupCreateTeamType.open(e);
-        });
-
-        $(document).off('click', '#btnCreateTeamType').on('click', '#btnCreateTeamType', function () {
-            popupCreateTeamType.close();
-            createTeamType();
-        });
-    });
-}
-
-/**
- * Creates a new Team
+ * Creates a new team
  */
 function createTeam() {
     const teamName = $("#teamName").val();
@@ -294,7 +218,7 @@ function createTeam() {
 }
 
 /**
- * Creates a new TeamType
+ * Creates a new team type
  */
 function createTeamType() {
     const internalName = $("#teamTypeName").val();
@@ -330,15 +254,86 @@ function createTeamType() {
 }
 
 /**
+ * Sets up the create team popup
+ */
+function setupCreateTeamPopup() {
+    const popupCreateTeam = new Popup("popup-containerCreateTeam");
+
+    let renderedHtml = '';
+    // Add a 'text' and 'value' property to each item in the array, so it can be used as options for the dropdown
+    const teamTypesOptions = allTeamTypes.map(teamType => {
+        return {
+            ...teamType,          // Spread to copy all existing properties
+            text: teamType.name,   // Add new 'text' property, copying the value from 'name'
+            value: teamType.id     // Add new 'value' property, copying the value from 'id'
+        };
+    });
+
+    $.when(
+        fetchEntryField('text', 'teamname', 'teamName', 'w-52', ''),
+        fetchDropdown('teamType', 'w-52', JSON.stringify(teamTypesOptions), 'Select Team Type')
+    ).then(function (field1, field2) {
+        renderedHtml += `<label for="teamName" class="input-label">Name</label>`
+        renderedHtml += field1[0];
+        renderedHtml += `<label for="teamType" class="input-label">Description</label>`
+        renderedHtml += field2[0];
+
+        popupCreateTeam.displayInputPopupCustom("/res/others/plus.png", "Create Team", "Create", "btnCreateTeam", renderedHtml);
+
+        $("#createTeam").click(function (e) {
+            $("#teamName").val("");
+            $("#teamType").val("");
+            popupCreateTeam.open(e);
+        });
+
+        $(document).off('click', '#btnCreateTeam').on('click', '#btnCreateTeam', function () {
+            popupCreateTeam.close();
+            createTeam();
+        });
+    });
+}
+
+/**
+ * Sets up the create team type popup
+ */
+function setupCreateTeamTypePopup() {
+    const popupCreateTeamType = new Popup("popup-containerCreateTeamType");
+
+    let renderedHtml = '';
+
+    $.when(
+        fetchEntryField('text', 'teamtypename', 'teamTypeName', 'w-52', ''),
+        fetchEntryField('text', 'teamtypedisplayname', 'teamTypeDisplayName', 'w-52', ''),
+    ).then(function (field1, field2) {
+        renderedHtml += `<label for="teamTypeName" class="input-label">Name</label>`
+        renderedHtml += field1[0];
+        renderedHtml += `<label for="teamTypeDisplayName" class="input-label">Display name</label>`
+        renderedHtml += field2[0];
+
+        popupCreateTeamType.displayInputPopupCustom("/res/others/plus.png", "Create TeamType", "Create", "btnCreateTeamType", renderedHtml);
+
+        $("#createTeamType").click(function (e) {
+            $("#teamTypeName").val("");
+            $("#teamTypeDisplayName").val("");
+            popupCreateTeamType.open(e);
+        });
+
+        $(document).off('click', '#btnCreateTeamType').on('click', '#btnCreateTeamType', function () {
+            popupCreateTeamType.close();
+            createTeamType();
+        });
+    });
+}
+
+/**
  * Returns the username of a user based on the id
  * If the id is null, it returns "No Manager"
  * @param id The ID of the user to find
  * @returns {Promise<unknown>} The username of the user or "No Manager" if the id is null
  */
 function getManagerName(id) {
-    user = users.find(user => user.id === id)
+    let user = users.find(user => user.id === id)
     return user ? user.username : 'No Manager';
-
 }
 
 /**
@@ -355,6 +350,9 @@ function getTeamTypeDisplayName(id) {
     return "Not Found"; // Return a default message if no match is found
 }
 
+/**
+ * Fetches all users from the database and saves it in the global variable 'users'
+ */
 function getUsers() {
     return $.ajax({
         url: '/user/getusers',
@@ -362,7 +360,6 @@ function getUsers() {
         success: function (data) {
             users = data;
         },
-
         error: function (data) {
             if (data.responseJSON && data.responseJSON.redirect) {
                 window.location.href = data.responseJSON.redirect;
@@ -373,10 +370,11 @@ function getUsers() {
 }
 
 /**
- * Displays the details of a gameday
- * @param team
- * @param teamId
- * @param triggeringElement
+ * Displays the edit view for a team
+ *
+ * @param team The team to edit
+ * @param teamId The id of the team
+ * @param triggeringElement The element that triggered the edit
  */
 function displayEditTeam(team, teamId, triggeringElement) {
     // Make a copy of the team object for updating purposes, excluding the 'id' for internal use
@@ -433,11 +431,10 @@ function displayEditTeam(team, teamId, triggeringElement) {
         tbody.append(tr);
     }
 
-    // Button container for operations
+    // Button container for closing and updating the team
     const btnContainer = $('<div class="flex float-right gap-4 mt-4"></div>');
     fetchButton('button', 'btnCloseEditTeam', 'Close', 'w-32', 'ri-close-circle-line').then(function (btnCloseEdit) {
         btnContainer.append(btnCloseEdit);
-
         // Fetch and append the update button
         return fetchButton('button', 'btnUpdateEditTeam', 'Update', 'w-32', 'ri-save-line', '', '', 'Success');
     }).then(function (btnUpdateEdit) {
@@ -458,15 +455,14 @@ function displayEditTeam(team, teamId, triggeringElement) {
     $(triggeringElement).after(teamEdit);
 }
 
-
-
 /**
- * Displays the details of a gameday
- * @param teamType
- * @param id
- * @param triggeringElement
+ * Displays the edit view for a team type
+ *
+ * @param teamType The team type to edit
+ * @param teamTypeId The id of the team type
+ * @param triggeringElement The element that triggered the edit
  */
-function displayEditTeamType(teamType, id, triggeringElement) {
+function displayEditTeamType(teamType, teamTypeId, triggeringElement) {
     // Destructure to exclude 'id' from teamTypeDetails
     const { id: teamTypeId, ...teamTypeDetails } = teamType;
 
@@ -521,7 +517,7 @@ function displayEditTeamType(teamType, id, triggeringElement) {
     }).then(function () {
         // Set up event handlers after all buttons have been added to the DOM.
         $('#btnUpdateEditTeamType').click(function () {
-            updateTeamType(id); // Now using the passed 'id' directly
+            updateTeamType(teamTypeId); // Now using the passed 'id' directly
         });
         $('#btnCloseEditTeamType').click(function () {
             $('#teamTypeEdit').remove();
@@ -534,9 +530,10 @@ function displayEditTeamType(teamType, id, triggeringElement) {
 }
 
 /**
- * Updates the data of a Team
+ * Updates the data of a team
  */
 function updateTeam(teamId, teamBeforeUpdate) {
+    // Fill in the fields with the existing values if the user didn't change them, this is necessary because the default values of dropdowns are not set
     const id = teamId
     const teamName = $("#editdisplayname").val() || teamBeforeUpdate.displayname;
     const teamType = $("#editteamtype_fk").val() || teamBeforeUpdate.teamtype_fk;
@@ -547,8 +544,6 @@ function updateTeam(teamId, teamBeforeUpdate) {
     }
     const discordnotificationdays = $("#editdiscordnotificationdays").val() || teamBeforeUpdate.discordnotificationdays;
     const salePercentage = $("#editsalepercentage").val() || teamBeforeUpdate.salepercentage;
-
-
     $.ajax({
         url: "/team/updateteam",
         type: "POST",
@@ -580,7 +575,7 @@ function updateTeam(teamId, teamBeforeUpdate) {
 }
 
 /**
- * Updates the data of a TeamType
+ * Updates the data of a team type
  */
 function updateTeamType(teamTypeId) {
     const id = teamTypeId;
@@ -601,7 +596,6 @@ function updateTeamType(teamTypeId) {
                 allTeamTypes = data;
                 sliceTableForPage(currentPageTeams, allTeamTypes);
             });
-
         },
         error: function (data) {
             if (data.responseJSON && data.responseJSON.redirect) {
@@ -614,7 +608,7 @@ function updateTeamType(teamTypeId) {
 }
 
 /**
- * Deletes a Team
+ * Deletes a team
  */
 function deleteTeam(e, id) {
     const popup = new Popup("popup-containerTeamDel");
@@ -651,7 +645,7 @@ function deleteTeam(e, id) {
 }
 
 /**
- * Deletes a Team
+ * Deletes a team type
  */
 function deleteTeamType(e, id) {
     const popup = new Popup("popup-containerTeamTypeDel");
