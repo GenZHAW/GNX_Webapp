@@ -14,7 +14,7 @@ function initPage() {
         // Assigning results to their respective global variables
         allTeams = results[0]; // results from loadTeams
         allTeamTypes = results[1]; // results from loadTeamTypes
-        getUsers().then(function (data) {
+        getUsers().then(function () {
             // Display data based on current page indices
             sliceTableForPage(currentPageTeams, allTeams);
             sliceTableForPage(currentPageTypes, allTeamTypes);
@@ -94,10 +94,11 @@ function buildTeamsTable(teams) {
         const tdButton = $("<td class='flex gap-2'></td>");
         const editTeam = $("<a href='#' id='editTeam'><i class='ri-edit-line ri-lg text-turquoise'></i></a>")
             .click(function () {
-                $('#teamEdit').removeClass('hidden');
                 const rowElement = $(this).closest('tr');
-                displayEditTeam(team, team.id, rowElement);
+                const teamId = team.id; // Ensure the 'id' is captured from 'team' for each click
+                displayEditTeam(team, teamId, rowElement);
             });
+
         const btnDeleteTeam = $("<a href='#' id='btnDeleteTeam'><i class='ri-delete-bin-line ri-lg text-turquoise'></i></a>")
             .click(function (e) {
                 deleteTeam(e, team.id);
@@ -123,9 +124,9 @@ function buildTeamTypesTable(teamTypes) {
         const tdButton = $("<td class='flex gap-2' ></td>");
         const editTeamType = $("<a href='#' id='editTeamType'><i class='ri-edit-line ri-lg text-turquoise'></i></a>")
             .click(function () {
-                $('#teamTypeEdit').removeClass('hidden');
                 const rowElement = $(this).closest('tr');
-                displayEditTeamType(teamType, teamType.id, rowElement);
+                const teamTypeId = teamType.id; // Ensure the 'id' is captured from 'team' for each click
+                displayEditTeamType(teamType, teamTypeId, rowElement);
             });
         const btnDeleteTeamType = $("<a href='#' id='btnDeleteTeamType'><i class='ri-delete-bin-line ri-lg text-turquoise'></i></a>")
             .click(function (e) {
@@ -257,7 +258,7 @@ function setupCreateTeamTypePopup() {
 /**
  * Creates a new Team
  */
-async function createTeam() {
+function createTeam() {
     const teamName = $("#teamName").val();
     const teamType = $("#teamType").val();
     const teamWeight = 100
@@ -357,107 +358,89 @@ function getTeamTypeDisplayName(id) {
 /**
  * Displays the details of a gameday
  * @param team
+ * @param teamId
  * @param triggeringElement
  */
 function displayEditTeam(team, teamId, triggeringElement) {
-    const teamBeforeUpdate = {...team}; // Creating a copy to send the original values when not updating all values
-    delete team.id;
-    // Creating a new table row to hold the editing form
+    // Make a copy of the team object for updating purposes, excluding the 'id' for internal use
+    const { id, ...teamDetails } = team;
+
+    // Clear the existing editing interface if it already exists
     if ($('#teamEdit').length > 0) {
         $('#teamEdit').remove();
     }
+
+    // Create new elements for editing
     const teamEdit = $('<tr id="teamEdit"></tr>');
     const editTable = $('<td colspan="5"></td>');
     const tbody = $('<div class="flex flex-wrap text-almost-white font-montserrat gap-2"></div>');
 
-    for (const [key, value] of Object.entries(team)) {
-        fieldName = "edit" + key
+    // Loop through the team details to generate form inputs
+    for (const [key, value] of Object.entries(teamDetails)) {
+        const fieldName = "edit" + key;
         const tr = $('<div></div>');
 
-        // Default input value
-        let inputValue = value;
+        // Prepare the input value, handling empty values with a placeholder
+        let inputValue = value || "";
 
-        // Check if the input value is empty and replace it with a placeholder
-        if (!inputValue) {
-            inputValue = "";
-        }
-
-        // Create a table cell and append the input element to it
-        const tdValue = $('<div></div>')
+        const tdValue = $('<div></div>');
         let tdKey;
 
+        // Special handling for dropdown fields like 'teamtype_fk' and 'account_fk'
         if (key === 'teamtype_fk') {
-            // Create a table cell for the key with a bold font and a specific width
-            tdKey = $('<label class="font-montnserrat text-base text-almost-white"></label>').text("Team Type");
-
+            tdKey = $('<label class="font-montserrat text-base text-almost-white"></label>').text("Team Type");
             const teamTypeDropDown = allTeamTypes.map(teamType => ({text: teamType.name, value: teamType.id}));
-
             const defaultOption = teamTypeDropDown.find(teamType => teamType.value === inputValue);
 
             fetchDropdown(fieldName, 'w-52', JSON.stringify(teamTypeDropDown), defaultOption.text).then(function (field) {
                 tdValue.append(field);
             });
         } else if (key === 'account_fk') {
-            tdKey = $('<label class="font-montnserrat text-base text-almost-white"></label>').text("Team Manager");
+            tdKey = $('<label class="font-montserrat text-base text-almost-white"></label>').text("Team Manager");
+            const userDropDown = users.map(user => ({text: user.username, value: user.id})).concat({text: "No Manager", value: 0});
+            const defaultOption = userDropDown.find(user => user.value === inputValue) || {text: "No Manager", value: 0};
 
-            // Map users to new objects with text and value properties, adding a default option
-            const userDropDown = users.map(user => ({text: user.username, value: user.id})).concat({
-                text: "No Manager",
-                value: 0
-            });
-
-            // Find the default option matching the input value or use "No Manager" as default
-            const defaultOption = userDropDown.find(user => user.value === inputValue) || {
-                text: "No Manager",
-                value: 0
-            };
-
-            // Fetch and append the dropdown to tdValue
             fetchDropdown(fieldName, 'w-52', JSON.stringify(userDropDown), defaultOption.text).then(field => {
                 tdValue.append(field);
             });
         } else {
-            // Create a table cell for the key with a bold font and a specific width
-            tdKey = $('<label class="font-montnserrat text-base text-almost-white"></label>').text(key.charAt(0).toUpperCase() + key.slice(1));
-
+            // For other fields, use a simple text input
+            tdKey = $('<label class="font-montserrat text-base text-almost-white"></label>').text(key.charAt(0).toUpperCase() + key.slice(1));
             fetchEntryField('text', team.displayname + "_" + key.charAt(0).toUpperCase() + key.slice(1), fieldName, 'w-64', inputValue).then(function (field) {
                 tdValue.append(field);
             });
         }
 
-        // Append both cells to the table row
+        // Append key and value divs to the row
         tr.append(tdKey).append(tdValue);
-
-        // Append the row to the tbody
         tbody.append(tr);
-
     }
-    const btnContainer = $('<div class="flex float-right gap-4 mt-4"></div>');
 
-// Fetch the first button and append it to the container.
+    // Button container for operations
+    const btnContainer = $('<div class="flex float-right gap-4 mt-4"></div>');
     fetchButton('button', 'btnCloseEditTeam', 'Close', 'w-32', 'ri-close-circle-line').then(function (btnCloseEdit) {
         btnContainer.append(btnCloseEdit);
 
-        // Only after the first button is appended, fetch the second button.
+        // Fetch and append the update button
         return fetchButton('button', 'btnUpdateEditTeam', 'Update', 'w-32', 'ri-save-line', '', '', 'Success');
     }).then(function (btnUpdateEdit) {
         btnContainer.append(btnUpdateEdit);
         editTable.append(btnContainer);
     }).then(function () {
-        // Set up event handlers after all buttons have been added to the DOM.
+        // Setup event handlers after buttons are added to the DOM
         $('#btnUpdateEditTeam').click(function () {
-            updateTeam(teamId, teamBeforeUpdate);
+            updateTeam(teamId, team); // Use the original team object with 'id' for updates
         });
         $('#btnCloseEditTeam').click(function () {
             $('#teamEdit').remove();
         });
     });
 
-
     editTable.append(tbody);
     teamEdit.append(editTable);
     $(triggeringElement).after(teamEdit);
 }
+
 
 /**
  * Displays the details of a gameday
@@ -465,8 +448,16 @@ function displayEditTeam(team, teamId, triggeringElement) {
  * @param id
  * @param triggeringElement
  */
+/**
+ * Displays the details of a gameday
+ * @param teamType
+ * @param id
+ * @param triggeringElement
+ */
 function displayEditTeamType(teamType, id, triggeringElement) {
-    delete teamType.id;
+    // Destructure to exclude 'id' from teamTypeDetails
+    const { id: teamTypeId, ...teamTypeDetails } = teamType;
+
     // Creating a new table row to hold the editing form
     if ($('#teamTypeEdit').length > 0) {
         $('#teamTypeEdit').remove();
@@ -475,8 +466,8 @@ function displayEditTeamType(teamType, id, triggeringElement) {
     const editTable = $('<td colspan="5"></td>');
     const tbody = $('<div class="flex flex-wrap text-almost-white font-montserrat gap-2"></div>');
 
-    for (const [key, value] of Object.entries(teamType)) {
-        fieldName = "edit" + key
+    for (const [key, value] of Object.entries(teamTypeDetails)) {
+        const fieldName = "edit" + key;
         const tr = $('<div></div>');
 
         // Default input value
@@ -488,27 +479,25 @@ function displayEditTeamType(teamType, id, triggeringElement) {
         }
 
         // Create a table cell and append the input element to it
-        const tdValue = $('<div></div>')
+        const tdValue = $('<div></div>');
         let tdKey;
 
         // Create a table cell for the key with a bold font and a specific width
-        tdKey = $('<label class="font-montnserrat text-base text-almost-white"></label>').text(key.charAt(0).toUpperCase() + key.slice(1));
+        tdKey = $('<label class="font-montserrat text-base text-almost-white"></label>').text(key.charAt(0).toUpperCase() + key.slice(1));
 
         fetchEntryField('text', teamType.displayname + "_" + key.charAt(0).toUpperCase() + key.slice(1), fieldName, 'w-64', inputValue).then(function (field) {
             tdValue.append(field);
         });
-
 
         // Append both cells to the table row
         tr.append(tdKey).append(tdValue);
 
         // Append the row to the tbody
         tbody.append(tr);
-
     }
     const btnContainer = $('<div class="flex float-right gap-4 mt-4"></div>');
 
-// Fetch the first button and append it to the container.
+    // Fetch the first button and append it to the container.
     fetchButton('button', 'btnCloseEditTeamType', 'Close', 'w-32', 'ri-close-circle-line').then(function (btnCloseEdit) {
         btnContainer.append(btnCloseEdit);
 
@@ -520,34 +509,16 @@ function displayEditTeamType(teamType, id, triggeringElement) {
     }).then(function () {
         // Set up event handlers after all buttons have been added to the DOM.
         $('#btnUpdateEditTeamType').click(function () {
-            updateTeamType(id);
+            updateTeamType(id); // Now using the passed 'id' directly
         });
         $('#btnCloseEditTeamType').click(function () {
             $('#teamTypeEdit').remove();
         });
     });
 
-
     editTable.append(tbody);
     teamTypeEdit.append(editTable);
     $(triggeringElement).after(teamTypeEdit);
-}
-
-function getUsers() {
-    return $.ajax({
-        url: '/user/getusers',
-        type: 'GET',
-        success: function (data) {
-            users = data;
-        },
-
-        error: function (data) {
-            if (data.responseJSON && data.responseJSON.redirect) {
-                window.location.href = data.responseJSON.redirect;
-            }
-            console.log("Error fetching users:", data.responseJSON);
-        }
-    })
 }
 
 /**
@@ -601,8 +572,8 @@ function updateTeam(teamId, teamBeforeUpdate) {
  */
 function updateTeamType(teamTypeId) {
     const id = teamTypeId;
-    const internalName = $("#editname").val() || teamTypeBeforeUpdate.name;
-    const displayName = $("#editdisplayname").val() || teamTypeBeforeUpdate.displayname;
+    const internalName = $("#editname").val()
+    const displayName = $("#editdisplayname").val()
     $.ajax({
         url: "/teamtype/updateteamtype",
         type: "POST",
