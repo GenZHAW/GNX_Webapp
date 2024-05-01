@@ -3,27 +3,31 @@
 <div class="bg-grey-level1 xl:pr-4 pr-4 px-4 md:px-8 py-6">
     <div class="w-full md:flex md:justify-between items-center">
         <h3 class="text-2xl mb-5 font-bold font-orbitron text-white">Registrationcodes</h3>
-        <%- include('../../components/buttondefault', {type: 'button', id: 'newRegistrationcode', text: 'Add new Registrationcode', icon: 'ri-time-line', btnType: 'Success'}) %>
+        <%- include('../../components/buttondefault', {type: 'button', id: 'newRegistrationcode', text: 'Add new Registrationcode', icon: 'ri-add-circle-line', btnType: 'Success'}) %>
     </div>
 
     <!-- ADD NEW Registrationcode -->
     <div class="bg-grey-level2 mt-4 p-4 hidden" id="addNewRegistrationcode">
         <h2 class="font-semibold font-montserrat text-lg text-almost-white">Add new Registrationcode</h2>
 
-        <div class="flex flex-row gap-4 items-center mt-4">
-            <p>Choose Team:</p>
-            <%- include('../../components/dropdown', {id: 'team', options: [], width: 'w-72'}) %>
+        <div class="sm:flex sm:flex-row gap-4 items-center mt-4 mb-4">
+            <p class="mb-2 sm:mb-0">Choose Team:</p>
+            <%- include('../../components/dropdown', {id: 'team', options: [], width: 'w-full sm:w-72'}) %>
         </div>
 
-        <div class="flex flex-row gap-4 items-center justify-end">
+        <div class="flex flex-row gap-4 items-center justify-between">
             <%- include('../../components/buttondefault', {type: 'button', id: 'cancelNewRegistrationcode', text: 'Cancel', icon: 'ri-close-line', btnType: 'Error'}) %>
             <%- include('../../components/buttondefault', {type: 'submit', id: 'submitNewRegistrationcode', text: 'Save', icon: 'ri-check-line', btnType: 'Success'}) %>
         </div>
     </div>
 
-    <!-- Registrationcode LIST -->
+    <!-- REGISTRATION CODE TABLE -->
     <div class="bg-grey-level2 mt-4 px-4 py-2">
-        <%- include('../../components/table', {id: 'registrationcodeTable', bodyId: 'registrationcodeData', headers: [{text: 'Code', width: 'w-full'}, {text: 'Team', width: 'w-full'}, {text: 'Status', width: 'w-full', display: 'md'}, {text: 'Valid until', width: 'w-full', display: 'sm'}, {text: 'Actions', width: '100px'}]}) %>
+        <%- include('../../components/table', {id: 'registrationcodeTable', bodyId: 'registrationcodeData', headers: [{text: 'Code', width: '100px'}, {text: 'Team'}, {text: 'Status', display: 'md'}, {text: 'Valid until', display: 'sm'}, {text: 'Actions', width: '70px'}]}) %>
+        <div class="flex items-center">
+            <i class="ri-information-line ri-xs text-almost-white mr-2"></i>
+            <p class="font-montserrat text-xs text-almost-white">Only Registrationcodes created in the last 7 Days are displayed</p>
+        </div>
     </div>
 </div>
 
@@ -41,20 +45,19 @@
                 $("#addNewRegistrationcode").toggleClass("hidden");
             });
 
-        $('#submitNewRegistrationcode')
+        $('#submitNewRegistrationcode').hide()
             .click(function() {
-                if ($('#team').val() == "undefined") {
-                    displayError("Please select a team!")
-                    return;
-                }
+                generateRegistrationCode($('#team').val()).then(function (data) {
+                    $("#addNewRegistrationcode").toggleClass("hidden");
 
-                generateRegistrationCode($('#team').val());
-                $("#addNewRegistrationcode").toggleClass("hidden");
-
-                loadRegistrationCodes().then(function (data) {
-                    buildTable(data)
+                    loadRegistrationCodes().then(function (data) {
+                        buildTable(data)
+                    });
                 });
             });
 
+        $('#team').change(function() {
+            $('#submitNewRegistrationcode').show();
+        });
     });
 </script>

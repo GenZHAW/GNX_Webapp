@@ -92,9 +92,9 @@ function hasUserPermission(user, permissions) {
                             LEFT JOIN roletype ON roletype.id = role.roletype_fk
                             LEFT JOIN permission ON "permission".roletype_fk = roletype.id
                             LEFT JOIN permissiontype ON permissiontype.id = "permission".permissiontype_fk
-                            WHERE roletype.id IS NOT NULL AND (role.team_fk = 2 OR role.account_fk = 10)
+                            WHERE roletype.id IS NOT NULL AND (role.team_fk = $4 OR role.account_fk = $3)
                             AND permissiontype.location = $1 AND permissiontype.permission = $2
-                            GROUP BY permissiontype.location, permissiontype.permission`, [permission.location, permission.permission], (err, results) => {
+                            GROUP BY permissiontype.location, permissiontype.permission`, [permission.location, permission.permission, user.id, user.team.id], (err, results) => {
                     if (err) {
                         reject(err);
                     } else {

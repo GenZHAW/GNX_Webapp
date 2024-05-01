@@ -9,6 +9,10 @@ function initPage(){
     });
 }
 
+/**
+ * Build Table with registration codes of the past 7 Days
+ * @param data
+ */
 function buildTable(data){
     let tableBody = $('#registrationcodeData');
     tableBody.empty();
@@ -16,7 +20,7 @@ function buildTable(data){
     data.forEach(function (element) {
         const tr = $("<tr></tr>");
         const tdCode = $("<td></td>").text(element.code)
-        const tdTeam = $("<td></td>").text(element.teamname).addClass("truncate");
+        const tdTeam = $("<td></td>").text(element.teamname).addClass('overflow-hidden whitespace-nowrap max-w-0 truncate sm:overflow-visible sm:whitespace-normal sm:max-w-none sm:truncate-none')
         const tdUsed = $("<td></td>").text(element.used === "Yes" ? "Inactive" : "Active").addClass("hidden md:block")
         tdUsed.addClass(element.used === "Yes" ? "text-error" : "text-success");
         const tdValid = $("<td></td>").addClass("hidden sm:table-cell").text(element.validuntil.split(',')[0])
@@ -92,21 +96,27 @@ function loadRegistrationCodes(){
     });
 }
 
+/**
+ * This function is used to generate a new registration code
+ *
+ * @param teamId
+ * @returns {Promise<unknown>}
+ */
 function generateRegistrationCode(teamId){
     return new Promise((resolve, reject) => {
         $.ajax({
             url: '/registrationcode/generateNewRegistrationCode/' + teamId,
             type: 'POST',
             success: function (data) {
-                console.log("Registration code created");
-                resolve(); // Resolve the promise when the registration code is generated successfully
+                displaySuccess(data.message)
+                resolve();
             },
             error: function (data) {
                 if (data.responseJSON && data.responseJSON.redirect) {
                     window.location.href = data.responseJSON.redirect;
                 }
                 console.log("Error creating registration code:", data.responseJSON);
-                reject(); // Reject the promise if there is an error generating the registration code
+                reject(data);
             }
         });
     });
