@@ -97,18 +97,18 @@ function buildTeamsTable(teams) {
     teams.forEach(async function (team) {
         const tr = $("<tr></tr>");
         const tdName = $("<td></td>").text(team.displayname);
-        const tdType = $("<td></td>").text(getTeamTypeDisplayName(team.teamtype_fk));
-        const tdManager = $("<td></td>").text(getManagerName(team.account_fk));
-        const tdNotificationDays = $("<td></td>").text(team.discordnotificationdays);
+        const tdType = $("<td></td>").text(getTeamTypeDisplayName(team.teamtype_fk)).addClass('hidden sm:table-cell');
+        const tdManager = $("<td></td>").text(getManagerName(team.account_fk)).addClass('hidden md:table-cell');
+        const tdNotificationDays = $("<td></td>").text(team.discordnotificationdays).addClass('hidden xl:table-cell');
         const tdButtonContainer = $("<td class='flex gap-2'></td>");
-        const editTeam = $("<a href='#' id='editTeam'><i class='ri-edit-line ri-lg text-turquoise'></i></a>")
+        const editTeam = $("<a href='#' id='editTeam'><i class='ri-edit-fill ri-lg text-turquoise'></i></a>")
             .click(function () {
                 const rowElement = $(this).closest('tr');
                 const teamId = team.id; // Ensure the 'id' is captured from 'team' for each click
                 displayEditTeam(team, teamId, rowElement);
             });
 
-        const btnDeleteTeam = $("<a href='#' id='btnDeleteTeam'><i class='ri-delete-bin-line ri-lg text-turquoise'></i></a>")
+        const btnDeleteTeam = $("<a href='#' id='btnDeleteTeam'><i class='ri-close-line ri-lg text-error'></i></a>")
             .click(function (e) {
                 deleteTeam(e, team.id);
             });
@@ -128,16 +128,16 @@ function buildTeamTypesTable(teamTypes) {
 
     teamTypes.forEach(function (teamType) {
         const tr = $("<tr></tr>");
-        const tdName = $("<td></td>").text(teamType.name)
+        const tdName = $("<td></td>").text(teamType.name).addClass('hidden sm:table-cell');
         const tdDpName = $("<td></td>").text(teamType.displayname);
         const tdButtonContainer = $("<td class='flex gap-2' ></td>");
-        const editTeamType = $("<a href='#' id='editTeamType'><i class='ri-edit-line ri-lg text-turquoise'></i></a>")
+        const editTeamType = $("<a href='#' id='editTeamType'><i class='ri-edit-fill ri-lg text-turquoise'></i></a>")
             .click(function () {
                 const rowElement = $(this).closest('tr');
                 const teamTypeId = teamType.id; // Ensure the 'id' is captured from 'team' for each click
                 displayEditTeamType(teamType, teamTypeId, rowElement);
             });
-        const btnDeleteTeamType = $("<a href='#' id='btnDeleteTeamType'><i class='ri-delete-bin-line ri-lg text-turquoise'></i></a>")
+        const btnDeleteTeamType = $("<a href='#' id='btnDeleteTeamType'><i class='ri-close-line ri-lg text-error'></i></a>")
             .click(function (e) {
                 deleteTeamType(e, teamType.id);
             });
@@ -264,7 +264,7 @@ function setupCreateTeamPopup() {
     const teamTypesOptions = allTeamTypes.map(teamType => {
         return {
             ...teamType,          // Spread to copy all existing properties
-            text: teamType.name,   // Add new 'text' property, copying the value from 'name'
+            text: teamType.displayname,   // Add new 'text' property, copying the value from 'name'
             value: teamType.id     // Add new 'value' property, copying the value from 'id'
         };
     });
@@ -275,7 +275,7 @@ function setupCreateTeamPopup() {
     ).then(function (field1, field2) {
         renderedHtml += `<label for="teamName" class="input-label">Name</label>`
         renderedHtml += field1[0];
-        renderedHtml += `<label for="teamType" class="input-label">Description</label>`
+        renderedHtml += `<label for="teamType" class="input-label">Team Type</label>`
         renderedHtml += field2[0];
 
         popupCreateTeam.displayInputPopupCustom("/res/others/plus.png", "Create Team", "Create", "btnCreateTeam", renderedHtml);
@@ -305,9 +305,9 @@ function setupCreateTeamTypePopup() {
         fetchEntryField('text', 'teamtypename', 'teamTypeName', 'w-52', ''),
         fetchEntryField('text', 'teamtypedisplayname', 'teamTypeDisplayName', 'w-52', ''),
     ).then(function (field1, field2) {
-        renderedHtml += `<label for="teamTypeName" class="input-label">Name</label>`
+        renderedHtml += `<label for="teamTypeName" class="input-label">Internal Name</label>`
         renderedHtml += field1[0];
-        renderedHtml += `<label for="teamTypeDisplayName" class="input-label">Display name</label>`
+        renderedHtml += `<label for="teamTypeDisplayName" class="input-label">Display Name</label>`
         renderedHtml += field2[0];
 
         popupCreateTeamType.displayInputPopupCustom("/res/others/plus.png", "Create TeamType", "Create", "btnCreateTeamType", renderedHtml);
@@ -388,7 +388,7 @@ function displayEditTeam(team, teamId, triggeringElement) {
     // Create new elements for editing
     const teamEdit = $('<tr id="teamEdit"></tr>');
     const editTable = $('<td colspan="5"></td>');
-    const tbody = $('<div class="flex flex-wrap text-almost-white font-montserrat gap-2"></div>');
+    const tbody = $('<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4"></div>');
 
     // Loop through the team details to generate form inputs
     for (const [key, value] of Object.entries(teamDetails)) {
@@ -407,16 +407,18 @@ function displayEditTeam(team, teamId, triggeringElement) {
             const teamTypeDropDown = allTeamTypes.map(teamType => ({text: teamType.name, value: teamType.id}));
             const defaultOption = teamTypeDropDown.find(teamType => teamType.value === inputValue);
 
-            fetchDropdown(fieldName, 'w-52', JSON.stringify(teamTypeDropDown), defaultOption.text).then(function (field) {
-                tdValue.append(field);
+            const dropDiv = $('<div class="w-64"></div>');
+            fetchDropdown(fieldName, 'w-64', JSON.stringify(teamTypeDropDown), defaultOption.text).then(function (field) {
+                tdValue.append(dropDiv.append(field));
             });
         } else if (key === 'account_fk') {
             tdKey = $('<label class="font-montserrat text-base text-almost-white"></label>').text("Team Manager");
             const userDropDown = users.map(user => ({text: user.username, value: user.id})).concat({text: "No Manager", value: 0});
             const defaultOption = userDropDown.find(user => user.value === inputValue) || {text: "No Manager", value: 0};
 
-            fetchDropdown(fieldName, 'w-52', JSON.stringify(userDropDown), defaultOption.text).then(field => {
-                tdValue.append(field);
+            const dropDiv = $('<div class="w-64"></div>');
+            fetchDropdown(fieldName, 'w-64', JSON.stringify(userDropDown), defaultOption.text).then(field => {
+                tdValue.append(dropDiv.append(field));
             });
         } else {
             // For other fields, use a simple text input
@@ -433,10 +435,10 @@ function displayEditTeam(team, teamId, triggeringElement) {
 
     // Button container for closing and updating the team
     const btnContainer = $('<div class="flex float-right gap-4 mt-4"></div>');
-    fetchButton('button', 'btnCloseEditTeam', 'Close', 'w-32', 'ri-close-circle-line').then(function (btnCloseEdit) {
+    fetchButton('button', 'btnCloseEditTeam', 'Close', 'w-32', 'ri-close-line').then(function (btnCloseEdit) {
         btnContainer.append(btnCloseEdit);
         // Fetch and append the update button
-        return fetchButton('button', 'btnUpdateEditTeam', 'Update', 'w-32', 'ri-save-line', '', '', 'Success');
+        return fetchButton('button', 'btnUpdateEditTeam', 'Update', 'w-32', 'ri-check-line', '', undefined, 'Success');
     }).then(function (btnUpdateEdit) {
         btnContainer.append(btnUpdateEdit);
         editTable.append(btnContainer);
@@ -472,7 +474,7 @@ function displayEditTeamType(teamType, typeId, triggeringElement) {
     }
     const teamTypeEdit = $('<tr id="teamTypeEdit"></tr>');
     const editTable = $('<td colspan="5"></td>');
-    const tbody = $('<div class="flex flex-wrap text-almost-white font-montserrat gap-2"></div>');
+    const tbody = $('<div class="flex flex-col gap-4"></div>');
 
     for (const [key, value] of Object.entries(teamTypeDetails)) {
         const fieldName = "edit" + key;
@@ -506,11 +508,11 @@ function displayEditTeamType(teamType, typeId, triggeringElement) {
     const btnContainer = $('<div class="flex float-right gap-4 mt-4"></div>');
 
     // Fetch the first button and append it to the container.
-    fetchButton('button', 'btnCloseEditTeamType', 'Close', 'w-32', 'ri-close-circle-line').then(function (btnCloseEdit) {
+    fetchButton('button', 'btnCloseEditTeamType', 'Close', 'w-32', 'ri-close-line').then(function (btnCloseEdit) {
         btnContainer.append(btnCloseEdit);
 
         // Only after the first button is appended, fetch the second button.
-        return fetchButton('button', 'btnUpdateEditTeamType', 'Update', 'w-32', 'ri-save-line', '', '', 'Success');
+        return fetchButton('button', 'btnUpdateEditTeamType', 'Update', 'w-32', 'ri-check-line', '', undefined, 'Success');
     }).then(function (btnUpdateEdit) {
         btnContainer.append(btnUpdateEdit);
         editTable.append(btnContainer);
