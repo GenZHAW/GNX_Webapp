@@ -46,13 +46,6 @@ router.get('/usermanagement', checkNotAuthenticated, permissionCheck('usermanage
 });
 
 /**
- * GET team-management page
- */
-router.get('/teammanagement', checkNotAuthenticated, permissionCheck('teammanagement', 'canOpen'), (req, res) => {
-            res.render('dashboard/teammanagement.ejs', { user: req.user });
-});
-
-/**
  * GET championpool page
  */
 router.get('/championpool', checkNotAuthenticated, permissionCheck('championpool', 'canOpen'), (req, res) => {
@@ -163,5 +156,11 @@ router.get('/registrationcode', checkNotAuthenticated, permissionCheck('adminpan
     res.render('dashboard/adminpanel/registrationcode.ejs', { user: req.user });
 });
 
+/**
+ * GET team-management page
+ */
+router.get('/teammanagement', checkNotAuthenticated, permissionCheck('adminpanel', 'canOpen'), (req, res) => {
+    res.render('dashboard/adminpanel/teammanagement.ejs', { user: req.user });
+});
 
 module.exports = router;

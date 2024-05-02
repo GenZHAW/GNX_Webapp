@@ -43,6 +43,16 @@
                class="absolute left-5 bottom-4 text-turquoise text-base font-semibold flex items-center">Manage Registrationcodes<i
                         class="text-turquoise ml-2 ri-arrow-right-s-fill"></i></a>
         </div>
+
+        <div class="relative shadow-shdaow2xl p-5 rounded-md w-60 flex flex-col h-52"
+             style="background: linear-gradient(to bottom right, #1E1F22, #2B2D30)">
+            <h4 class="text-lg font-bold text-white pb-4">Team management</h4>
+            <p class="font-montserrat text-almost-white font-bold text-sm">Teams</p>
+            <h3 class="text-success font-bold pt-2 text-center" style="font-size: 2.7rem" id="teamCount">-</h3>
+            <a href="#" id="openTeammanagement"
+               class="sm:absolute sm:left-5 sm:bottom-4 text-turquoise text-base font-semibold flex items-center">Manage Teams<i
+                        class="text-turquoise ml-2 ri-arrow-right-s-fill"></i></a>
+        </div>
     </div>
 </div>
 
@@ -68,6 +78,11 @@
         $('#openRegistrationcodes').click(function (e) {
             e.preventDefault();
             loadPage('registrationcode')
+        });
+
+        $('#openTeammanagement').click(function (e) {
+            e.preventDefault();
+            loadPage('teammanagement')
         });
     });
 </script>
