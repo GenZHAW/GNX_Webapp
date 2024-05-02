@@ -126,7 +126,6 @@ function deleteTeam(id) {
  * @returns {number} the id of the updated team
  */
 function updateTeam(data) {
-    console.log(data)
     return pool.query(`UPDATE team SET displayname = $1, teamtype_fk = $2, weight = $3, account_fk = $4, discordnotificationdays = $5, salepercentage = $6 WHERE id = $7`,[data.teamName, data.teamType, data.teamWeight, data.teamManager, data.discordnotificationdays, data.salePercentage, data.id]);
 }
 
