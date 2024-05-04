@@ -46,13 +46,6 @@ router.get('/usermanagement', checkNotAuthenticated, permissionCheck('usermanage
 });
 
 /**
- * GET team-management page
- */
-router.get('/teammanagement', checkNotAuthenticated, permissionCheck('teammanagement', 'canOpen'), (req, res) => {
-            res.render('dashboard/teammanagement.ejs', { user: req.user });
-});
-
-/**
  * GET championpool page
  */
 router.get('/championpool', checkNotAuthenticated, permissionCheck('championpool', 'canOpen'), (req, res) => {
@@ -142,9 +135,6 @@ router.get('/valorantstats', checkNotAuthenticated, permissionCheck('home', 'can
     res.render('dashboard/valorantstats.ejs', { user: req.user });
 });
 
-
-
-
 /**
  * GET patchnotes page
  */
@@ -157,6 +147,20 @@ router.get('/patchnotes', checkNotAuthenticated, permissionCheck('adminpanel', '
  */
 router.get('/cronjob', checkNotAuthenticated, permissionCheck('adminpanel', 'canOpen'), (req, res) => {
     res.render('dashboard/adminpanel/cronjob.ejs', { user: req.user });
+});
+
+/**
+ * GET registrationcode page
+ */
+router.get('/registrationcode', checkNotAuthenticated, permissionCheck('adminpanel', 'canOpen'), (req, res) => {
+    res.render('dashboard/adminpanel/registrationcode.ejs', { user: req.user });
+});
+
+/**
+ * GET team-management page
+ */
+router.get('/teammanagement', checkNotAuthenticated, permissionCheck('adminpanel', 'canOpen'), (req, res) => {
+    res.render('dashboard/adminpanel/teammanagement.ejs', { user: req.user });
 });
 
 module.exports = router;

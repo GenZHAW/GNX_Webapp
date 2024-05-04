@@ -55,21 +55,21 @@ class cSendValorantStatsInfo {
             const users = await this.getUsers();
             const currentWeek = this.getCurrentWeek();
 
-            this.sendStartMessage(currentWeek);
+            await this.sendStartMessage(currentWeek);
             // Get match history and calculate stats for each player
             for (const user of users.rows) {
                 let message = ""; // Initialize message string
                 const riotId = user.riotgames
                 if (!riotId) {
                     message += `**__Riot ID not found for ${user.username}__**\n`
-                    discordBot.sendMessageToChannel(this.discordChannelId, message + this.msgDivider);
+                    await discordBot.sendMessageToChannel(this.discordChannelId, message + this.msgDivider);
                     continue; // Skip this user if Riot ID is not found
                 }
                 const [name, tag] = riotId.split("#");
                 let isRiotIdValid = (await checkIfRiotIdValid(riotId)).isValid;
                 if (isRiotIdValid !== 'true'){
                     message += `**__Riot ID not is not valid for ${user.username} with riot id: ${user.riotgames}__**\n`
-                    discordBot.sendMessageToChannel(this.discordChannelId, message + this.msgDivider);
+                    await discordBot.sendMessageToChannel(this.discordChannelId, message + this.msgDivider);
                     continue;
                 }
                 let modeAndJsonArray = await getCondensedMatchHistory(name, tag, this.modes);
@@ -123,25 +123,25 @@ class cSendValorantStatsInfo {
                     message += `Match history data not found for ${riotId}\n`;
                 }
                 // Send message to the Discord channel
-                discordBot.sendMessageToChannel(this.discordChannelId, message + this.msgDivider);
+                await discordBot.sendMessageToChannel(this.discordChannelId, message + this.msgDivider);
             }
-            this.sendEndMessage()
+            await this.sendEndMessage()
 
         } catch (error) {
             console.error('Error initializing page:', error);
         }
     }
-    sendStartMessage(currentWeek){
+    async sendStartMessage(currentWeek) {
         let message = `🔥 **Week ${currentWeek} Valorant Stats Report** 🔥\n\n`;
         message += 'These are the requirements:\n'
         message += `*Both Team Competitive and Premiere must have at least ${this.CompPremierGames} games played*\n`
         message += `*Both Team Deathmatch and Deathmatch must have at least ${this.DmTdmGames} games played*`
-        discordBot.sendMessageToChannel(this.discordChannelId, message);
+        await discordBot.sendMessageToChannel(this.discordChannelId, message);
     }
 
-    sendEndMessage(){
+    async sendEndMessage() {
         let message = `\nKeep it up <@&${this.roleId}>! :muscle:`;
-        discordBot.sendMessageToChannel(this.discordChannelId, message);
+        await discordBot.sendMessageToChannel(this.discordChannelId, message);
     }
     /**
      * Returns the current week (KW)

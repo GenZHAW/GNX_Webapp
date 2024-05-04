@@ -687,7 +687,6 @@ function buildNextTrainingTable(teamId, isMobile) {
     });
 }
 
-
 /**
  * Setup of the define training time popup
  */
@@ -696,7 +695,6 @@ async function setupDefTrainingTimePopup(id) {
     const defTrainingTimePopup = new Popup("popup-containerDefTrainingTime");
 
     const options = await getTrainingOptions(teamId);
-
     $.when(
         fetchEntryField('time', 'from', 'from', undefined, ''),
         fetchEntryField('time', 'until', 'until', undefined, ''),

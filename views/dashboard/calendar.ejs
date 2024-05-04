@@ -106,7 +106,7 @@
         }
 
         const teamManagerId = '<%= user.team.account_fk %>';
-        if(teamManagerId && teamManagerId === <%= user.id %>)
+        if(teamManagerId && teamManagerId == <%= user.id %>)
         {
             setupDefTrainingTimePopup(<%= user.team.id %>);
         }

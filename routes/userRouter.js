@@ -199,6 +199,22 @@ router.get('/getUserPermissions', checkNotAuthenticated, async (req, res) => {
 });
 
 /**
+ * GET route for checking if a user has multiple teams
+ */
+router.get('/hasMultipleTeams', checkNotAuthenticated, async (req, res) => {
+    hasUserMultipleTeams(req.user.id).then((result) => {
+        if (result.rows.length > 1) {
+            res.status(200).send({response: true, teams: result.rows});
+        }else{
+            res.status(200).send({response: false, teams: ''});
+        }
+    }).catch((err) => {
+        console.log(err);
+        res.status(500).send({message: "There was an error getting the information if a user has multiple teams! Please try again later."});
+    });
+});
+
+/**
  * GET route for the full quality user picture
  */
 router.get('/getUserPicture', checkNotAuthenticated, async (req, res) => {
@@ -232,6 +248,15 @@ router.get('/getUsername/:id', checkNotAuthenticated, async (req, res) => {
         res.status(500).send({message: "There was an error getting the Username! Please try again later."});
     });
 });
+
+/**
+ * Checks if a user has multiple teams
+ * @param userId
+ * @returns {Promise<QueryResult<any>>}
+ */
+function hasUserMultipleTeams(userId){
+    return pool.query(`SELECT DISTINCT team_fk, team.displayname FROM teammembership LEFT JOIN team ON team.id = teammembership.team_fk WHERE teammembership.account_fk = $1`, [userId]);
+}
 
 /** Updates the information of a user in the database
  * This method is generic and can be used to update any field of the user

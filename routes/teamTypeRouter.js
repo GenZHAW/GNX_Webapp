@@ -55,9 +55,22 @@ router.post('/updateteamtype', checkNotAuthenticated, permissionCheck('teammanag
     });
 });
 
-router.get('/getteamtypeOptions', checkNotAuthenticated, permissionCheck('teammanagement', 'canOpen'), async (req, res) => {
-    const teamtypeOptions = await getTeamTypeOptions();
-    res.send(teamtypeOptions);
+/**
+ * POST route for deleting a team
+ */
+router.post('/deleteteamtype', checkNotAuthenticated, permissionCheck('teammanagement', 'canOpen'), function (req, res) {
+    const formData = req.body.id;
+
+    deleteTeamType(formData).then((result) => {
+        if (result.rowCount === 0) {
+            res.status(500).send({message: "There was an error deleting the team type! Please try again later."});
+        }else {
+            logMessage(`User ${req.user.username} deleted the team type ${formData.name}`,LogLevel.INFO,req.user.id)
+            res.status(200).send({message: "Team type deleted successfully"});
+        }
+    }).catch(() => {
+        res.status(500).send({message: "There was an error deleting the team type! Please try again later."});
+    });
 });
 
 /**
@@ -86,19 +99,13 @@ function updateTeamType(data) {
     return pool.query(`UPDATE teamtype SET displayname = $1, name = $3 WHERE id = $2`,[data.displayName, data.id, data.internalName]);
 }
 
-async function getTeamTypeOptions() {
-    const query = util.promisify(pool.query).bind(pool);
-    const results = await query(`SELECT *
-                                 FROM teamtype`);
 
-    const options = results.rows.map((result) => {
-        return {
-            value: result.name,
-            label: result.displayname
-        };
-    });
-
-    return options;
+/**
+ * Delete a team type
+ * @param id the id of the team type to delete
+ * @returns {Promise<number>} a Promise that resolves to the id of the new team
+ */
+function deleteTeamType(id) {
+    return pool.query(`DELETE FROM teamtype WHERE id = $1`,[id]);
 }
-
 module.exports = router;

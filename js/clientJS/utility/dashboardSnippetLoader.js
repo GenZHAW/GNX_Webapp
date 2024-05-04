@@ -20,6 +20,7 @@ const pages = [
     {id: "valorantstats", url: "/dashboard/valorantstats"},
     {id: "patchnotes", url: "/dashboard/patchnotes"},
     {id: "cronjob", url: "/dashboard/cronjob"},
+    {id: "registrationcode", url: "/dashboard/registrationcode"},
 ];
 
 /**
