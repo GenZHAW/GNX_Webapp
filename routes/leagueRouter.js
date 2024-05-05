@@ -199,6 +199,14 @@ async function getGamesPlayed(riotName, riotTag, modes) {
     return modeAndJsonArray;
 }
 
+/**
+ * Fetches the match history of a user from the tracker.gg API for a specific mode and a specific amount of days.
+ * @param riotName - The riot name of the user
+ * @param riotTag - The riot tag of the user
+ * @param days - The amount of days to fetch the match history for
+ * @param mode - The mode to fetch the match history for
+ * @returns {Promise<void>}
+ */
 async function getMatchHistory(riotName, riotTag, days, mode) {
     const latestDate = new Date();
     const oldestDate = new Date(latestDate);
@@ -252,6 +260,15 @@ async function getMatchHistory(riotName, riotTag, days, mode) {
             console.error(`Error occurred while fetching match history for mode '${mode}':`, error);
         }
     }
+
+    // Filter matches to retain only those within the specified timeframe
+    if (dataJson.length > 0) {
+        dataJson[0].matches = dataJson[0].matches.filter(match => {
+            const matchDate = new Date(match.metadata.timestamp);
+            return matchDate >= oldestDate && matchDate <= latestDate;
+        });
+    }
+    return dataJson;
 }
 
 
