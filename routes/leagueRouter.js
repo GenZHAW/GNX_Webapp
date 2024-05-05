@@ -410,4 +410,4 @@ function deleteChampion(championpoolId) {
     `, [championpoolId]);
 }
 
-module.exports = {router, getMatchHistory, getAccountInfo, getGamesPlayed};
+module.exports = {router, getMatchHistory, getAccountInfo};
