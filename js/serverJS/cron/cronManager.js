@@ -202,7 +202,7 @@ function setTaskParams(taskClass, cronJob, cronJobName){
             taskClass.setDiscordChannelId(cronJob.discordchannelid);
             taskClass.setTeamId(cronJob.team_fk);
             taskClass.setRoleId(cronJob.discordroleid);
-            taskClass.setTimeFrame(dcronJob.timeframe);
+            taskClass.setTimeFrame(cronJob.timeframe);
             taskClass.setMinSoloQGames(cronJob.minsoloqgames);
             taskClass.setMinFlexQGames(cronJob.minflexqgames);
             break;
