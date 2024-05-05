@@ -210,36 +210,46 @@ async function getMatchHistory(riotName, riotTag, days, mode) {
 
     // Fetch matches until oldestDate is reached or beyond the specified days limit
     while(!loadedAllMatches){
-        let url = `https://api.tracker.gg/api/v2/lol/standard/matches/riot/${riotName}%23${riotTag}?region=EUW&type=&season=2024-01-10T01%3A00%3A00%2B00%3A00&playlist=${mode}&next=${nextMatches}`;
+        try{
+            let url = `https://api.tracker.gg/api/v2/lol/standard/matches/riot/${riotName}%23${riotTag}?region=EUW&type=&season=2024-01-10T01%3A00%3A00%2B00%3A00&playlist=${mode}&next=${nextMatches}`;
 
-        const response = await fetch(url);
+            const response = await fetch(url);
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status} for ${riotName}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status} for ${riotName}`);
+            }
+
+            const text = await response.text();
+
+            if (text.trim() === '') {
+                throw new Error('Empty response received from the API');
+            }
+
+            let data = JSON.parse(text);
+
+            //Get the data object we need
+            data = data.data;
+
+            // If it's the first time we get data, we just push it into the array else we add the matches to the existing array
+            if(dataJson.length === 0){
+                dataJson.push(data)
+            }
+            else{
+                dataJson[0].matches = [...dataJson[0].matches, ...data.matches];
+            }
+
+            const lastMatch = data.matches[data.matches.length - 1];
+            currentDateInJson = new Date(lastMatch.metadata.timestamp);
+
+            if(currentDateInJson < oldestDate){
+                loadedAllMatches = true;
+            }
+            else{
+                nextMatches += 25;
+            }
         }
-
-        const text = await response.text();
-
-        if (text.trim() === '') {
-            throw new Error('Empty response received from the API');
-        }
-
-        const data = JSON.parse(text);
-
-        if(dataJson.length === 0){
-            dataJson.push(data)
-        }
-        else{
-            dataJson.matches = [...dataJson.matches, ...data.matches];
-        }
-        const lastMatch = data.matches[data.matches.length - 1];
-        currentDateInJson = new Date(lastMatch.metadata.timestamp);
-
-        if(currentDateInJson < oldestDate){
-            loadedAllMatches = true;
-        }
-        else{
-            nextMatches += 25;
+        catch (error) {
+            console.error(`Error occurred while fetching match history for mode '${mode}':`, error);
         }
     }
 }
