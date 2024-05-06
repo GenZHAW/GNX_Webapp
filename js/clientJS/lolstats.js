@@ -1,5 +1,5 @@
 let playerCardCount = 0;
-let currentTimeFrame = 1
+let currentTimeFrame = 2
 
 /**
  * This function is called when the page is loaded.

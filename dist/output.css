@@ -3662,6 +3662,10 @@ input:checked + .slider {
     margin-bottom: 0px;
   }
 
+  .sm\:mb-4 {
+    margin-bottom: 1rem;
+  }
+
   .sm\:mb-5 {
     margin-bottom: 1.25rem;
   }
@@ -3676,10 +3680,6 @@ input:checked + .slider {
 
   .sm\:mt-0 {
     margin-top: 0px;
-  }
-
-  .sm\:mb-4 {
-    margin-bottom: 1rem;
   }
 
   .sm\:block {
@@ -3837,10 +3837,6 @@ input:checked + .slider {
 
   .md\:mt-8 {
     margin-top: 2rem;
-  }
-
-  .md\:mb-4 {
-    margin-bottom: 1rem;
   }
 
   .md\:block {
