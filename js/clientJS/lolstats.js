@@ -199,7 +199,6 @@ async function buildPlayerCard(ownPlayerCard = false, riotId, order) {
     removeIconLink.click(function (e) {
         e.preventDefault();
         const order = $(this).closest('div.main').index() + 1;
-        console.log(order);
         removePlayer(order, riotId);
     });
 
