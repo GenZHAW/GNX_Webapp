@@ -32,6 +32,10 @@
 <div class="popup-container" id="popupContainerAddPlayer"></div>
 <script>
     $(document).ready(function () {
-        test()
+        const data = {
+            id: '<%= user.id %>',
+            riotId: '<%= user.riotgames %>'
+        }
+        initPage(data.id, data.riotId);
     });
 </script>
