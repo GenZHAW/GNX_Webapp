@@ -94,7 +94,6 @@ class cSendLoLStatsInfo {
     /**
      * Fetches the match history for a specific user
      * @param riotId - The riot id of the user
-     * @param days - The amount of days the match history should be fetched
      * @param mode - The mode of the match history
      * @returns {Promise<unknown>}
      */
