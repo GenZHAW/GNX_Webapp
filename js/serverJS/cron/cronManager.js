@@ -211,6 +211,9 @@ function setTaskParams(taskClass, cronJob, cronJobName){
             taskClass.setDiscordChannelId(cronJob.discordchannelid);
             taskClass.setTeamId(cronJob.team_fk);
             taskClass.setRoleId(cronJob.discordroleid);
+            taskClass.setTimeFrame(cronJob.timeframe);
+            taskClass.setMinCompetitiveGames(cronJob.mincompetitivegames);
+            taskClass.setMinDeathMatchGames(cronJob.mindeathmatchgames);
             break;
     }
 
