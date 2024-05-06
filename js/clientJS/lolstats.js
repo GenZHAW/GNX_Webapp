@@ -1,5 +1,5 @@
 let playerCardCount = 0;
-let currentTimeFrame = 1
+let currentTimeFrame = 2
 
 /**
  * This function is called when the page is loaded.
@@ -115,7 +115,6 @@ async function buildPlayerCard(ownPlayerCard = false, riotId, order) {
     let winrate;
     let customColor;
     let rankedText;
-    let modesAndJsonArray;
     let matchHistory;
 
     try {
@@ -157,11 +156,11 @@ async function buildPlayerCard(ownPlayerCard = false, riotId, order) {
         const name = riotId.split('#')[0];
         const tag = riotId.split('#')[1];
         const days = currentTimeFrame;
-        const modes = ['RANKED_SOLO_5x5'];
-        modesAndJsonArray = await $.ajax({
+        const mode = 'RANKED_SOLO_5x5';
+        matchHistory = await $.ajax({
             type: 'GET',
             url: '/league/getMatchHistory',
-            data: {name: name, tag: tag, days: days, modes: modes},
+            data: {name: name, tag: tag, days: days, mode: mode},
             success: function (data) {
                 return data;
             },
@@ -172,13 +171,15 @@ async function buildPlayerCard(ownPlayerCard = false, riotId, order) {
                 displayError(data.responseJSON.message);
             }
         })
+
+
     }
 
 
     let mainMainContainer = $('<div>').addClass('flex w-64 flex-col gap-3 main');
     let mainContainer = $('<div>').addClass('relative bg-grey-level2 w-64 p-4');
     let summonerIcon = $('<img>').attr('src', icon.icon).addClass('w-32 h-32 rounded-full mx-auto z-0');
-    let summonerName = $('<p>').text(summonerInfo.name).addClass('text-center text-white text-xl font-semibold font-montserrat mt-2 font-bold');
+    let summonerName = $('<p>').text(riotId.split('#')[0]).addClass('text-center text-white text-xl font-semibold font-montserrat mt-2 font-bold');
     let levelContainer = $('<div>').addClass('mx-auto mt-1 w-12 z-10');
     let levelText = $('<p>').text(summonerInfo.summonerLevel).addClass('text-white text-center text-sm font-semibold font-montserrat font-bold bg-grey-level1 rounded-3xl p-0.5');
     let rankRoleContainer = $('<div>').addClass('flex justify-center items-center gap-8 mt-4 mx-auto w-full');
@@ -198,31 +199,29 @@ async function buildPlayerCard(ownPlayerCard = false, riotId, order) {
     removeIconLink.click(function (e) {
         e.preventDefault();
         const order = $(this).closest('div.main').index() + 1;
-        console.log(order);
         removePlayer(order, riotId);
     });
 
-    let matchPlayed = 0;
-    let chmapionArray = [];
-    matchHistory = modesAndJsonArray[0][1];
-    if (matchHistory){
-        matchPlayed = matchesPlayed(matchHistory, currentTimeFrame)
-        chmapionArray = await getMostPlayedChampions(matchHistory, riotId);
+    let matchesPlayed = 0;
+    let championArray = [];
+    if (matchHistory[0].matches.length !== 0){
+        matchesPlayed = matchHistory[0].matches.length
+        championArray = await getMostPlayedChampions(matchHistory, riotId);
     }
 
     let soloQContainer = $('<div>').addClass('bg-grey-level2 w-64 p-2 flex flex-col');
     let soloQText = $('<p>').text('Game Count').addClass('text-center text-white font-semibold font-montserrat');
-    let soloQValue = $('<p>').text(matchPlayed).addClass('text-center text-success font-semibold font-montserrat text-xl');
+    let soloQValue = $('<p>').text(matchesPlayed).addClass('text-center text-success font-semibold font-montserrat text-xl');
 
     let championsContainer = $('<div>').addClass('bg-grey-level2 w-64 p-2 flex flex-col');
     let championsText = $('<p>').text('Most played Champions').addClass('text-center text-white font-semibold font-montserrat');
     let imgContainer = $('<div>').addClass('flex justify-center items-center gap-4 mt-2');
-    chmapionArray.forEach(function (champion) {
+    championArray.forEach(function (champion) {
         let img1 = $('<img>').attr('src', 'https://ddragon.leagueoflegends.com/cdn/14.4.1/img/champion/' + champion + '.png').addClass('w-8 h-8 rounded-full');
         imgContainer.append(img1);
     });
 
-    if(chmapionArray.length === 0) {
+    if(championArray.length === 0) {
         let img1 = $('<img>').attr('src', '/res/riot/ranks/NO_DATA.png').addClass('w-8 h-8');
         imgContainer.append(img1);
     }
@@ -246,13 +245,13 @@ async function buildPlayerCard(ownPlayerCard = false, riotId, order) {
 
 /**
  * This function fetches the most played champions of a player
- * @param matchHistory
- * @param riotId
+ * @param matchHistory - The match history of the player
+ * @param riotId - The riot id of the player
  * @returns {Promise<*[]>}
  */
 async function getMostPlayedChampions(matchHistory, riotId) {
     // Count the occurrences of each championName in the matchHistory
-    const championCount = matchHistory.reduce((acc, match) => {
+    const championCount = matchHistory[0].matches.reduce((acc, match) => {
         const segment = match.segments.find(segment => segment.metadata.riotId === riotId);
         if (segment) {
             const championName = segment.metadata.championName;
@@ -269,6 +268,7 @@ async function getMostPlayedChampions(matchHistory, riotId) {
 
     return sortedChampionNames;
 }
+
 
 /**
  * This function removes a player from the windows aswell as from the definition

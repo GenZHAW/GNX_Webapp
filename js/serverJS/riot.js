@@ -7,16 +7,7 @@ const getDDragonDataFromRiot = async () => {
     let latestVersion;
 
     // Get the latest version
-    await fetch('https://ddragon.leagueoflegends.com/api/versions.json')
-        .then(response => response.json())
-        .then(data => {
-            // Extracting the latest version
-            latestVersion = data[0]; // Assuming the first element in the array is the latest version
-            console.log('Latest DDragon version:', latestVersion);
-        })
-        .catch(error => {
-            console.error('Error fetching DDragon version:', error);
-        });
+    latestVersion = await getDDragonVersion();
 
     let dDragonData;
     // Fetch champion data using the latest version
@@ -31,6 +22,27 @@ const getDDragonDataFromRiot = async () => {
     return dDragonData;
 }
 
+/**
+ * Get the latest version of the dDragon API
+ * @returns {Promise<*>}
+ */
+async function getDDragonVersion() {
+    let latestVersion;
+
+    // Get the latest version
+    await fetch('https://ddragon.leagueoflegends.com/api/versions.json')
+        .then(response => response.json())
+        .then(data => {
+            // Extracting the latest version
+            latestVersion = data[0];
+        })
+        .catch(error => {
+            console.error('Error fetching DDragon version:', error);
+        });
+
+    return latestVersion;
+
+}
 /**
  * Get the dDragon data from the project
  * @returns {Promise<*>}
@@ -93,4 +105,4 @@ async function getSummonerInfo(puuid) {
     }
 }
 
-module.exports = {getDDragonData: getDDragonDataFromRiot, getDDragonDataFromProject,getAccountInfo,getSummonerInfo}
+module.exports = {getDDragonData: getDDragonDataFromRiot, getDDragonDataFromProject,getAccountInfo,getSummonerInfo, getDDragonVersion}
