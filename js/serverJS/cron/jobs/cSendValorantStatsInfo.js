@@ -11,43 +11,15 @@ class cSendValorantStatsInfo {
     discordChannelId = 0;
     teamId = 0;
     roleId = 0;
+    minDeathMatchGames = 0;
+    minCompetitiveGames = 0;
+    timeFrame = 0;
     modes = ['competitive', 'premier', 'team-deathmatch', 'deathmatch'];
-    DmTdmGames = 30
-    CompPremierGames = 20
-    amountOfDays = 7
     msgDivider = "------------------------------------------------------------------------------------------------"
-
-    /**
-     * Sets the discord channel id
-     * @param discordChannelId
-     */
-     setDiscordChannelId(discordChannelId){
-        this.discordChannelId = discordChannelId;
-    }
-
-    /**
-     * Sets the team id
-     * @param teamId
-     */
-    setTeamId(teamId){
-        this.teamId = teamId;
-    }
-
-    /**
-     * Sets the role id which gets pinged by the message
-     * @param roleId
-     */
-    setRoleId(roleId){
-        this.roleId = roleId;
-    }
 
     /**
      * This function calculates the wins and losses of each player in each mode for a specific amount of days.
      * It also checks if the requirements are met.
-     *
-     * @param riotIds
-     * @param modes
-     * @param amountOfDays
      * @returns {Promise<void>}
      */
     async execute(){
@@ -85,7 +57,7 @@ class cSendValorantStatsInfo {
                         const jsonData = modeAndJson[1];
                         if (jsonData && jsonData.data && jsonData.data.heatmap) {
                             const heatmapData = jsonData.data.heatmap;
-                            const totalGames = this.calculateTotalGames(heatmapData, this.amountOfDays); // Function to calculate total games
+                            const totalGames = this.calculateTotalGames(heatmapData, this.timeFrame); // Function to calculate total games
                             // Update mode-wise stats
                             modeStats[mode].games += totalGames;
                         }
@@ -105,11 +77,11 @@ class cSendValorantStatsInfo {
                     let requirementsMet = true;
                     let unmetRequirements = [];
 
-                    if (teamDeathmatchTotal + deathmatchTotal < this.DmTdmGames) {
+                    if (teamDeathmatchTotal + deathmatchTotal < this.minDeathMatchGames) {
                         unmetRequirements.push(`**TDM + DM :x: **`);
                         requirementsMet = false;
                     }
-                    if (competitiveTotal + premierTotal < this.CompPremierGames) {
+                    if (competitiveTotal + premierTotal < this.minCompetitiveGames) {
                         unmetRequirements.push(`**Competitive + Premier :x:**`);
                         requirementsMet = false;
                     }
@@ -134,8 +106,8 @@ class cSendValorantStatsInfo {
     async sendStartMessage(currentWeek) {
         let message = `🔥 **Week ${currentWeek} Valorant Stats Report** 🔥\n\n`;
         message += 'These are the requirements:\n'
-        message += `*Both Team Competitive and Premiere must have at least ${this.CompPremierGames} games played*\n`
-        message += `*Both Team Deathmatch and Deathmatch must have at least ${this.DmTdmGames} games played*`
+        message += `*Both Team Competitive and Premiere must have at least ${this.minCompetitiveGames} games played*\n`
+        message += `*Both Team Deathmatch and Deathmatch must have at least ${this.minDeathMatchGames} games played*`
         await discordBot.sendMessageToChannel(this.discordChannelId, message);
     }
 
@@ -183,6 +155,55 @@ class cSendValorantStatsInfo {
         });
 
         return totalGames;
+    }
+
+    /**
+     * Sets the discord channel id
+     * @param discordChannelId
+     */
+    setDiscordChannelId(discordChannelId){
+        this.discordChannelId = discordChannelId;
+    }
+
+    /**
+     * Sets the team id
+     * @param teamId
+     */
+    setTeamId(teamId){
+        this.teamId = teamId;
+    }
+
+    /**
+     * Sets the role id which gets pinged by the message
+     * @param roleId
+     */
+    setRoleId(roleId){
+        this.roleId = roleId;
+    }
+
+    /**
+     * Sets the time frame in which the goal has to be achieved
+     * @param timeFrame
+     */
+    setTimeFrame(timeFrame) {
+        this.timeFrame = timeFrame;
+    }
+
+    /**
+     * Sets the minimum amount of competitive games that are required to achieve the goal
+     * @param minCompetitiveGames
+     */
+    setMinCompetitiveGames(minCompetitiveGames){
+        this.minCompetitiveGames = minCompetitiveGames;
+
+    }
+
+    /**
+     * Sets the minimum amount of deathmatch games that are required to achieve the goal
+     * @param minDeathMatchGames
+     */
+    setMinDeathMatchGames(minDeathMatchGames){
+        this.minDeathMatchGames = minDeathMatchGames;
     }
 
 }
