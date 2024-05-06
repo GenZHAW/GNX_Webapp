@@ -4,7 +4,7 @@ const riot = require('../js/serverJS/riot.js')
 const {checkNotAuthenticated, permissionCheck} = require("../js/serverJS/sessionChecker");
 const {pool} = require("../js/serverJS/database/dbConfig");
 const {logMessage, LogLevel} = require('../js/serverJS/logger.js');
-const {getAccountInfo, getSummonerInfo, getSummonerIcon} = require("../js/serverJS/riot");
+const {getAccountInfo, getSummonerInfo, getSummonerIcon, getDDragonVersion} = require("../js/serverJS/riot");
 const puppeteer = require('puppeteer');
 
 /**
@@ -21,7 +21,9 @@ router.get('/getDDragonData', permissionCheck('championpool', 'canOpen'), async 
 router.get('/getPlayerIcon', permissionCheck('lolstatspage', 'canOpen'), async (req, res) => {
     getAccountInfo(req.query.riotId).then((accountInfo) => {
         getSummonerInfo(accountInfo.data.puuid).then((summonerInfo) => {
-           res.status(200).send({icon: `https://ddragon.leagueoflegends.com/cdn/14.6.1/img/profileicon/${summonerInfo.summonerInfo.profileIconId}.png`});
+            getDDragonVersion().then((version) => {
+                res.status(200).send({icon: `https://ddragon.leagueoflegends.com/cdn/${version}/img/profileicon/${summonerInfo.summonerInfo.profileIconId}.png`});
+            });
         });
     }).catch((error) => {
         console.log(error);
