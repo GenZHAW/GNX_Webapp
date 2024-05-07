@@ -7,6 +7,7 @@ function initPage(){
     loadCronjobCount()
     loadActiveRegistrationCodeCount()
     loadTeamCount()
+    loadUserCount()
 }
 
 /**
@@ -94,6 +95,22 @@ function loadTeamCount(){
         type: 'GET',
         success: function(response) {1
             $('#teamCount').text(response.length);
+        },
+        error: function(data) {
+            if (data.responseJSON && data.responseJSON.redirect) {
+                window.location.href = data.responseJSON.redirect;
+            }
+            displayError(data.responseJSON.message);
+        }
+    });
+}
+
+function loadUserCount(){
+    $.ajax({
+        url: '/user/getusers',
+        type: 'GET',
+        success: function(response) {1
+            $('#userCount').text(response.length);
         },
         error: function(data) {
             if (data.responseJSON && data.responseJSON.redirect) {

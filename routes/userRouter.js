@@ -250,6 +250,24 @@ router.get('/getUsername/:id', checkNotAuthenticated, async (req, res) => {
 });
 
 /**
+ * POST route for blocking or unblocking a user
+ */
+router.post('/blockOrUnblockUser/', checkNotAuthenticated, async (req, res) => {
+    const formData = req.body;
+
+    blockOrUnblockUser(formData).then((result) => {
+        if (result.rowCount === 0) {
+            res.status(500).send({message: "There was an error updating the user! Please try again later."});
+        }else {
+            logMessage(`User ${req.user.username} updated the user ${formData.username} to status Blocked = ${formData.blocked}`,LogLevel.INFO,req.user.id)
+            res.status(200).send({message: "User updated successfully"});
+        }
+    }).catch(() => {
+        res.status(500).send({message: "There was an error updating the user! Please try again later."});
+    });
+});
+
+/**
  * Checks if a user has multiple teams
  * @param userId
  * @returns {Promise<QueryResult<any>>}
@@ -518,6 +536,11 @@ function updateUserPicture(base64, userId) {
         .catch(err => {
             console.error("An error occurred:", err);
         });
+}
+
+function blockOrUnblockUser(data){
+    return pool.query(`UPDATE account SET blocked = $1 WHERE id = $2`, [data.blocked, data.id]);
+
 }
 
 module.exports = {

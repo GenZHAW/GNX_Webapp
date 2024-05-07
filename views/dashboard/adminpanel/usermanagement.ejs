@@ -15,9 +15,10 @@
         bodyId: 'usersData',
         headers: [
         {text: 'Username', width: 'w-full'},
-        {text: 'Team', width: 'w-full', display: 'sm'},
-        {text: 'Fullname', width: 'w-full', display: 'md'},
-        {text: 'User Status', width: 'w-full', display: 'xl'},
+        {text: 'Full name', width: 'w-full', display: 'sm'},
+        {text: 'Phone number', width: 'w-full', display: 'md'},
+        {text: 'Email', width: 'w-full', display: 'xl'},
+        {text: 'Blocked', width: 'w-full', display: 'xl'},
         {text: 'Actions', width: '100px'}
         ]
         }) %>
@@ -31,8 +32,8 @@
 
 </div>
 
-<div id="popup-containerUserDel" class="popup-container"></div>
-<div id="popup-containerUserBlock" class="popup-container"></div>
+<div id="popup-containerYesNoUnBlockUser" class="popup-container"></div>
+<div id="popup-containerYesNoBlockUser" class="popup-container"></div>
 <script>
     $(document).ready(function () {
         initPage();
