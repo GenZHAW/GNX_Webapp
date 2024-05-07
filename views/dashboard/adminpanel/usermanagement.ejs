@@ -1,0 +1,40 @@
+<script src="/js/clientJS/adminpanel/usermanagement.js"></script>
+
+<div class="bg-grey-level1 xl:pr-4 pr-4 px-4 md:px-8 py-6">
+    <div class="w-full md:flex md:justify-between items-center">
+        <h3 class="text-2xl font-bold font-orbitron text-white">User Management</h3>
+    </div>
+
+    <!-- User Table -->
+    <div class="bg-grey-level2 p-3 mt-5">
+        <div class="w-full sm:flex sm:justify-between items-center mb-2 sm:mb-4">
+            <h4 class="text-xl font-bold font-orbitron text-white mb-4 sm:mb-0">Users</h4>
+        </div>
+        <%- include('../../components/table', {
+        id: 'usersTable',
+        bodyId: 'usersData',
+        headers: [
+        {text: 'Username', width: 'w-full'},
+        {text: 'Team', width: 'w-full', display: 'sm'},
+        {text: 'Fullname', width: 'w-full', display: 'md'},
+        {text: 'User Status', width: 'w-full', display: 'xl'},
+        {text: 'Actions', width: '100px'}
+        ]
+        }) %>
+
+        <div class="flex justify-between items-center mt-4">
+            <%- include('../../components/buttondefault', {type: 'button', id: 'usersPrevPage', text: '', icon: 'ri-arrow-left-line'}) %>
+            <p class="text-almost-white font-montserrat font-bold" id="usersPageIndicator">Page 1 / 1</p>
+            <%- include('../../components/buttondefault', {type: 'button', id: 'usersNextPage', text: '', icon: 'ri-arrow-right-line'}) %>
+        </div>
+    </div>
+
+</div>
+
+<div id="popup-containerUserDel" class="popup-container"></div>
+<div id="popup-containerUserBlock" class="popup-container"></div>
+<script>
+    $(document).ready(function () {
+        initPage();
+    });
+</script>
