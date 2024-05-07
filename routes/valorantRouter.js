@@ -158,7 +158,7 @@ async function getCondensedMatchHistory(riotName, riotTag, modes) {
     return modeAndJsonArray;
 }
 /**
- * Returns the lolstats config of a user
+ * Returns the valorant stats config of a user
  * If there is no config, it will insert a new one
  * @param user
  */
