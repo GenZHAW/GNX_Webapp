@@ -283,13 +283,13 @@ function hasUserMultipleTeams(userId){
  * @returns {Promise<*>}
  */
 async function updateUser(formData, userId) {
-    const fields = ['fullName', 'email', 'phone', 'username', 'street', 'city', 'zip', 'steam', 'origin', 'riotgames', 'resetpasswordtoken','resetpasswordexpires', 'blocked', 'discord','trainingdatareminder','wpuserid','wptoken','wprefreshtoken'];
+    const fields = ['fullName', 'email', 'phone', 'username', 'street', 'city', 'zip', 'steam', 'origin', 'riotgames', 'battlenet', 'resetpasswordtoken','resetpasswordexpires', 'blocked', 'discord','trainingdatareminder','wpuserid','wptoken','wprefreshtoken'];
     const updates = [];
     delete formData.password;
 
     fields.forEach(field => {
         if (formData[field] !== undefined) {
-            if (formData['zip'] === ''){
+            if (formData['zip'] === '' || formData['zip'] === '-' ){
                 formData['zip'] = null;
             }
             updates.push(`${field} = $${updates.length + 1}`);

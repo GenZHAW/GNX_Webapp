@@ -36,7 +36,7 @@ function initPage() {
  * Slices the data to display only the data for the current page
  * After slicing the data it builds the table
  * @param page The current page index
- * @param data The data to slice e.g allUsers
+ * @param data The data to slice e.g. allUsers
  */
 function sliceTableForPage(page, data) {
     let startIndex = (page - 1) * elementsPerPage;
@@ -200,8 +200,8 @@ async function blockOrUnblockUser(user){
 /**
  * Updates the data of a team
  */
-async function updateUser(user) {
-    const id = user.id
+async function updateUser(userId, user) {
+    const id = userId
     const username = $("#editusername").val()
     const fullName = $("#editfullname").val()
     const street = $("#editstreet").val()
@@ -221,14 +221,13 @@ async function updateUser(user) {
         type: "POST",
         dataType: "json",
         data: {
-            id: id,
+            fullName: fullName,
+            email: email,
+            phone: phone,
             username: username,
-            fullname: fullName,
             street: street,
             city: city,
             zip: zip,
-            phone: phone,
-            email: email,
             steam: steam,
             origin: origin,
             riotgames: riotgames,
@@ -263,8 +262,6 @@ function addToggleToElement(element, fieldName, userDetails, headingName){
         const tr = $('<div></div>');
 
         // Prepare the input value, handling empty values with a placeholder
-        let inputValue = value || "";
-
         const tdValue = $('<div></div>');
         let tdKey;
 
