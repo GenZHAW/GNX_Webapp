@@ -65,7 +65,7 @@ function buildUserTable(users){
     tableBody.empty();
 
     users.forEach(async function (user) {
-        const userId = user.id; // Ensure the 'id' is captured from 'user' for each click
+        const userId = user.id;
         const tr = $("<tr></tr>");
         const tdUsername = $("<td></td>").text(user.username);
         const tdFullname = $("<td></td>").text(user.fullname).addClass('hidden sm:table-cell');
@@ -251,6 +251,13 @@ async function updateUser(userId, user) {
     });
 }
 
+/**
+ * Appends a Heading and a toggle button to an element
+ * @param element The element to append to
+ * @param fieldName The names of the fields to add
+ * @param userDetails The user details to populate the fields with
+ * @param headingName The title of the heading to add
+ */
 function addToggleToElement(element, fieldName, userDetails, headingName){
     // Loop through the user details to generate form inputs
     const heading = $('<h4 class="font-montserrat text-lg text-almost-white w-full font-bold"></h4>').text(headingName);
@@ -275,6 +282,14 @@ function addToggleToElement(element, fieldName, userDetails, headingName){
         element.append(tbody)
     }
 }
+
+/**
+ * Appends a Heading and a set of entry fields to an element
+ * @param element The element to append to
+ * @param fieldNames The names of the fields to add
+ * @param userDetails The user details to populate the fields with
+ * @param headingName The title of the heading to add
+ */
 function addFieldsToElement(element, fieldNames, userDetails, headingName){
     // Loop through the user details to generate form inputs
     const heading = $('<h4 class="font-montserrat text-lg text-almost-white w-full font-bold"></h4>').text(headingName);
