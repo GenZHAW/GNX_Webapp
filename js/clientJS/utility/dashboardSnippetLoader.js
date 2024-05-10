@@ -68,6 +68,13 @@ async function checkSessionStatus() {
 }
 
 /**
+ * Loads a Toggle button from the Server
+ */
+function fetchToggleButton(id, value) {
+    return $.get(`/renderToggleButton?id=${id}&value=${value}`);
+}
+
+/**
  * Loads an Entry Field from the Server
  */
 function fetchEntryField(type, name, id, width, value) {

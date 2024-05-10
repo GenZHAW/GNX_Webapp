@@ -272,6 +272,20 @@ app.get('/renderTextarea', (req, res) => {
 });
 
 /**
+ * GET routes for rendering a single toggle button
+ */
+app.get('/renderToggleButton', (req, res) => {
+    let { id, value } = req.query;
+
+    id = id === 'undefined' ? undefined : id;
+    value = value === 'undefined' ? undefined : value;
+
+    res.render('components/toggle.ejs', {
+        id, value
+    });
+});
+
+/**
  * POST route for changing the currently displayed team of a user
  */
 app.post('/changeteam', checkNotAuthenticated, (req, res, next) => {
