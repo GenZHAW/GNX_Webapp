@@ -78,6 +78,8 @@ async function getMatchHistory(riotName, riotTag, days, modes) {
     for (const mode of modes) {
         let paginationCount = 0;
         let jsonArray = [];
+        let apiRequestCount = 0;  // Track the number of API requests made
+        let errorCount = 0;       // Track the number of errors encountered
 
         try {
             let currentDateInJson = latestDate;
@@ -86,17 +88,26 @@ async function getMatchHistory(riotName, riotTag, days, modes) {
                 let url = `https://api.tracker.gg/api/v2/valorant/standard/matches/riot/${riotName}%23${riotTag}?type=competitive&season=&agent=all&map=all&next=${paginationCount}`;
                 const response = await fetch(url);
 
+                apiRequestCount++;  // Increment API request count
+
                 if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status} for ${riotName}`);
+                    errorCount++;  // Increment error count if response is not ok
+                    if (errorCount >= 10) {
+                        throw new Error(`Too many errors encountered while fetching data for mode ${mode}`);
+                    }
+                    continue;  // Continue to next iteration to retry
                 }
 
                 const text = await response.text();
 
                 // Check if the response is not empty
                 if (text.trim() === '') {
-                    throw new Error('Empty response received from the API');
+                    errorCount++;  // Increment error count if response is empty
+                    if (errorCount >= 10) {
+                        throw new Error('Repeated empty responses received from the API');
+                    }
+                    continue;  // Continue to next iteration to retry
                 }
-
 
                 const jsonData = JSON.parse(text);
 
@@ -115,9 +126,14 @@ async function getMatchHistory(riotName, riotTag, days, modes) {
 
                 // Calculate the next set of matches to fetch
                 paginationCount += 1;
-            } while (currentDateInJson > oldestDate);
+            } while (currentDateInJson > oldestDate && apiRequestCount < 20);
 
-            modeAndJsonArray.push([mode, jsonArray.flat()]);
+            if (apiRequestCount >= 20) {
+                console.error(`API request limit reached for mode ${mode}`);
+                jsonArray = null;  // Set to null if request limit is reached
+            }
+
+            modeAndJsonArray.push([mode, jsonArray ? jsonArray.flat() : null]);
         } catch (error) {
             console.error(`Error occurred while fetching match history for mode '${mode}':`, error);
             // Push null for this mode if an error occurs
@@ -126,6 +142,7 @@ async function getMatchHistory(riotName, riotTag, days, modes) {
     }
     return modeAndJsonArray;
 }
+
 
 async function getCondensedMatchHistory(riotName, riotTag, modes) {
     const modeAndJsonArray = [];

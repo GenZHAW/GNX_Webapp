@@ -217,13 +217,16 @@ async function getMatchHistory(riotName, riotTag, days, mode) {
     let currentDateInJson = latestDate;
     let dataJson = [];
     let loadedAllMatches = false;
+    let apiRequestCount = 0;  // Counter for API requests
+    let errorCount = 0;  // Counter for errors encountered
 
-    // Fetch matches until oldestDate is reached or beyond the specified days limit
-    while(!loadedAllMatches){
-        try{
+    // Fetch matches until oldestDate is reached or beyond the specified days limit or until 20 tries or 10 errors
+    while (!loadedAllMatches && apiRequestCount < 20 && errorCount < 10) {
+        try {
             let url = `https://api.tracker.gg/api/v2/lol/standard/matches/riot/${riotName}%23${riotTag}?region=EUW&type=&season=2024-01-10T01%3A00%3A00%2B00%3A00&playlist=${mode}&next=${nextMatches}`;
 
             const response = await fetch(url);
+            apiRequestCount++;  // Increment the API request counter
 
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status} for ${riotName}`);
@@ -237,30 +240,34 @@ async function getMatchHistory(riotName, riotTag, days, mode) {
 
             let data = JSON.parse(text);
 
-            //Get the data object we need
+            // Get the data object we need
             data = data.data;
 
             // If it's the first time we get data, we just push it into the array else we add the matches to the existing array
-            if(dataJson.length === 0){
-                dataJson.push(data)
-            }
-            else{
+            if (dataJson.length === 0) {
+                dataJson.push(data);
+            } else {
                 dataJson[0].matches = [...dataJson[0].matches, ...data.matches];
             }
 
             const lastMatch = data.matches[data.matches.length - 1];
             currentDateInJson = new Date(lastMatch.metadata.timestamp);
 
-            if(currentDateInJson < oldestDate){
+            if (currentDateInJson < oldestDate) {
                 loadedAllMatches = true;
-            }
-            else{
+            } else {
                 nextMatches += 25;
             }
-        }
-        catch (error) {
+        } catch (error) {
+            errorCount++;  // Increment the error counter
             console.error(`Error occurred while fetching match history for mode '${mode}':`, error);
         }
+    }
+
+    // Check if the API request or error limits were reached without loading all matches
+    if ((apiRequestCount >= 20 || errorCount >= 10) && !loadedAllMatches) {
+        console.error('Limit reached without completing match history retrieval. API Requests:', apiRequestCount, 'Errors:', errorCount);
+        return []; // Return an empty array
     }
 
     // Filter matches to retain only those within the specified timeframe
@@ -270,8 +277,10 @@ async function getMatchHistory(riotName, riotTag, days, mode) {
             return matchDate >= oldestDate && matchDate <= latestDate;
         });
     }
+
     return dataJson;
 }
+
 
 
 /**
