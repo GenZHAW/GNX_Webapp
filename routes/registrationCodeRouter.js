@@ -11,7 +11,7 @@ const {logMessage, LogLevel} = require('../js/serverJS/logger.js');
 /**
  * POST route for generating a new registration code for a specific team
  */
-router.post('/generateNewRegistrationCode/:teamId', checkNotAuthenticated, permissionCheck('usermanagement', 'canOpen'), function (req, res) {
+router.post('/generateNewRegistrationCode/:teamId', checkNotAuthenticated, permissionCheck('adminpanel', 'canOpen'), function (req, res) {
     const teamId = req.params.teamId;
     generateNewRegistrationCode(teamId).then(()=>{
         logMessage(`New Registration Code generated for Team ${teamId}`, LogLevel.INFO, req.user.id)
@@ -22,7 +22,7 @@ router.post('/generateNewRegistrationCode/:teamId', checkNotAuthenticated, permi
 /**
  * GET route for getting all registration codes
  */
-router.get('/getregistrationcodes', checkNotAuthenticated, permissionCheck('usermanagement', 'canOpen'), async (req, res) => {
+router.get('/getregistrationcodes', checkNotAuthenticated, permissionCheck('adminpanel', 'canOpen'), async (req, res) => {
     const registrationCodes = await getRegistrationCodes();
     res.send(registrationCodes);
 });
@@ -31,7 +31,7 @@ router.get('/getregistrationcodes', checkNotAuthenticated, permissionCheck('user
  * POST route for updating the state of a registration code
 
  */
-router.post('/updateRegistrationCode/:code/:used', checkNotAuthenticated, permissionCheck('usermanagement', 'canOpen'), function (req, res) {
+router.post('/updateRegistrationCode/:code/:used', checkNotAuthenticated, permissionCheck('adminpanel', 'canOpen'), function (req, res) {
     const regCode = req.params.code;
     const used = req.params.used;
     updateRegistrationCode(regCode, used);

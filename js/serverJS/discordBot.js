@@ -297,7 +297,7 @@ const doesUserExist = async (discordUsername) => {
     const waitForGuildsCache = () => {
         return new Promise((resolve) => {
             const checkGuildsCache = () => {
-                if (client.guilds.cache || counter >= 20) {
+                if (client.guilds || counter >= 20) {
                     clearInterval(interval);
                     resolve();
                 }

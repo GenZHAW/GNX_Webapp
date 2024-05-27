@@ -62,6 +62,7 @@ function permissionCheck(location, permission) {
                 } else {
                     // For non-API requests, redirect to the /error page
                     logMessage(`User ${req.user.username} tried to access ${location} but has no permission`, LogLevel.WARNING, req.user.id)
+                    console.log(`User ${req.user.username} tried to access ${location} but has no permission`)
                     res.redirect('/error');
                 }
             }
