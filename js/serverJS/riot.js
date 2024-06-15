@@ -81,6 +81,29 @@ async function getAccountInfo(riotId) {
 }
 
 /**
+ * Get a List of matchIds which a specific user has played in a specific timeframe in a specific queue
+ * @param puuid The puuid of the User
+ * @param startTime The start time of the specific period as epoch time
+ * @param endTime The end time of the specific period as epoch time
+ * @param queue The game queue (Ranked = 420, Blind = 430, Flex = 440)
+ * @returns {Promise<{isValid: string, message: string}|{matchList: any, isValid: string}>} A List with the matchIds
+ */
+async function getLoLMatchIds(puuid, startTime, endTime, queue){
+    try{
+        const endpoint = `https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?startTime=${startTime}&endTime=${endTime}&queue=${queue}&start=0&count=100`
+        const response = await axios.get(endpoint, {
+            headers: {
+                "X-Riot-Token": process.env.RIOT_API_KEY
+            }
+        });
+        return {isValid: 'true', matchList: response.data};
+    }catch(err){
+        console.error('Error message:', err.message);
+        return {isValid: 'false', message: 'There was an error processing your request.'};
+    }
+}
+
+/**
  * Get the Summoner info
  * @param puuid
  * @returns {Promise<{isValid: string}>}
@@ -105,4 +128,4 @@ async function getSummonerInfo(puuid) {
     }
 }
 
-module.exports = {getDDragonData: getDDragonDataFromRiot, getDDragonDataFromProject,getAccountInfo,getSummonerInfo, getDDragonVersion}
+module.exports = {getDDragonData: getDDragonDataFromRiot, getDDragonDataFromProject,getAccountInfo,getSummonerInfo, getDDragonVersion, getLoLMatchIds}
