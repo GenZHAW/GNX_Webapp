@@ -3,7 +3,7 @@
  */
 const leagueRouter = require('../../../../routes/leagueRouter');
 const {pool} = require('../../../serverJS/database/dbConfig.js');
-const {getMatchHistory} = require("../../../../routes/leagueRouter");
+const {getLoLMatchIds} = require("../../../serverJS/riot");
 const discordBot = require('../../discordBot');
 
 class cSendLoLStatsInfo {
@@ -13,7 +13,7 @@ class cSendLoLStatsInfo {
     timeFrame = 0;
     minSoloQGames = 0;
     minFlexQGames = 0
-    modes = ['RANKED_SOLO_5x5', 'RANKED_FLEX_SR'];
+    modes = ['Ranked_Solo', 'Ranked_Flex'];
     msgDivider = "------------------------------------------------------------------------------------------------"
 
     async execute() {
@@ -32,8 +32,8 @@ class cSendLoLStatsInfo {
             }
 
             try {
-                let soloQMatchHistory = await this.fetchMatchHistory(riotId, this.modes[0]);
-                let flexQMatchHistory = await this.fetchMatchHistory(riotId, this.modes[1]);
+                let soloQMatchHistory = await this.fetchMatchIds(riotId, 420)
+                let flexQMatchHistory = await this.fetchMatchIds(riotId, 440)
 
                 // Check if match history fetch was successful or not before proceeding
                 if (!soloQMatchHistory || !flexQMatchHistory) {
@@ -42,8 +42,8 @@ class cSendLoLStatsInfo {
                     continue;
                 }
 
-                let totalSoloQGames = soloQMatchHistory[0].matches.length;
-                let totalFlexQGames = flexQMatchHistory[0].matches.length;
+                let totalSoloQGames = soloQMatchHistory.matchList.length
+                let totalFlexQGames = flexQMatchHistory.matchList.length
 
                 message += `**${riotId}:**\n`;
                 message += `${this.modes[0]}: ${totalSoloQGames}\n`;
@@ -92,18 +92,20 @@ class cSendLoLStatsInfo {
     }
 
     /**
-     * Fetches the match history for a specific user
-     * @param riotId - The riot id of the user
-     * @param mode - The mode of the match history
-     * @returns {Promise<unknown>}
+     * Fetches a List with match ID's that the user played in the specific timeFrame
+     * @param riotId The RiotId of the user
+     * @param mode The queue (Ranked = 420, Flex = 440)
+     * @returns {Promise<unknown>} A List with all Match ID's of the timeFrame
      */
-    fetchMatchHistory(riotId, mode) {
+    fetchMatchIds(riotId, mode){
         return new Promise((resolve, reject) => {
             leagueRouter.getAccountInfo(riotId).then(async response => {
                 if (response.isValid === 'false') {
                     resolve('Invalid Riot ID');
                 } else {
-                    const result = await leagueRouter.getMatchHistory(riotId.split('#')[0], riotId.split('#')[1], this.timeFrame, mode)
+                    let endTime = Math.floor(new Date().getTime() / 1000)
+                    let startTime = endTime - (this.timeFrame * 86400)
+                    const result = await getLoLMatchIds(response.data.puuid, startTime, endTime, mode)
                     resolve(result);
                 }
             });
@@ -117,7 +119,7 @@ class cSendLoLStatsInfo {
         const today = new Date();
         const firstDayOfYear = new Date(today.getFullYear(), 0, 1);
         const pastDaysOfYear = (today - firstDayOfYear) / 86400000;
-        return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+        return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7) - 1;
     }
 
     /**
@@ -159,7 +161,7 @@ class cSendLoLStatsInfo {
 
     /**
      * Sets the time frame in which the goal has to be achieved
-     * @param timeFrame
+     * @param timeFrame in days
      */
     setTimeFrame(timeFrame) {
         this.timeFrame = timeFrame;
