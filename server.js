@@ -40,6 +40,8 @@ const gamedayRouter = require("./routes/gamedayRouter");
 const cronjobRouter = require("./routes/cronjobRouter");
 const {updateSubscriptionTable} = require("./js/serverJS/wooCommerceIntegration");
 const cronManager = require('./js/serverJS/cron/cronManager.js');
+const {join} = require("path");
+const cors = require("cors");
 
 /**
  * MIDDLEWARE
@@ -55,18 +57,84 @@ app.use('/richtexteditor', express.static(__dirname + '/richtexteditor'));
 app.use(express.json({limit: '50mb'}));
 app.use(express.urlencoded({limit: '50mb', extended: true}));
 
+app.use(cors());
+
 /**
  * DISCORD BOT
  */
 const guildId = "951559378354450483";
-const client = new DiscordBot.Client({intents: 3276799});
+const client = new DiscordBot.Client({intents: 53608447});
 client.login(process.env.DISCORD_TOKEN).then(() => {
     client.once('ready', () => {
         // This code will execute only once when the client is ready
+        console.log("Discord Bot is ready")
         discordBot.setupDiscordBot(guildId, client);
         cronManager.registerCronJobs();
     });
 });
+
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+client.on('ready', async () => {
+    const channel = client.channels.cache.get('1297853691591917610');
+    if (channel) {
+        // Clear all previous messages in the channel
+        await channel.bulkDelete(100, true);
+
+        const row = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('assignRole')
+                    .setLabel('Assign Friend-Role')
+                    .setStyle(ButtonStyle.Success),
+            );
+
+        channel.send({ content: 'You have a friend which needs access to our community channels? Click the Button below!\n\n', components: [row] });
+    }
+});
+
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isButton()) return;
+
+    if (interaction.customId === 'assignRole') {
+        const member = interaction.guild.members.cache.get(interaction.user.id);
+        const role = interaction.guild.roles.cache.get('1055920519746158614');
+
+        // Check if the user has the required role or a higher role
+        if (!member.roles.cache.has('1055920519746158614') &&
+            !member.roles.cache.some(r => r.position > role.position)) {
+            return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
+        }
+
+        // Send initial reply asking for a name
+        const initialReply = await interaction.reply({ content: 'Please enter the name of the member you want to assign the role to.', ephemeral: true });
+
+        const filter = m => m.author.id === interaction.user.id;
+        const collector = interaction.channel.createMessageCollector({ filter, time: 15000, max: 1 });
+
+        collector.on('collect', async m => {
+            const targetMember = interaction.guild.members.cache.find(member => member.user.username === m.content);
+            if (targetMember) {
+                const targetRole = interaction.guild.roles.cache.get('1055920519746158614');
+                if (targetRole) {
+                    await targetMember.roles.add(targetRole);
+                    await interaction.followUp({ content: `${targetMember.user.username} has been given the role.`, ephemeral: true });
+                } else {
+                    await interaction.followUp({ content: 'Role not found.', ephemeral: true });
+                }
+            } else {
+                await interaction.followUp({ content: 'Member not found. Be sure to enter their discord name and not the display name!', ephemeral: true });
+            }
+
+            // Once a response (success or error) is sent, delete the initial interaction message
+            setTimeout(async () => {
+                await initialReply.delete();
+                await m.delete(); // Delete the user's input message
+            }, 5000); // Adjust the timeout duration as needed (5 seconds here)
+        });
+    }
+});
+
 
 /**
  * PASSPORT SETUP / SESSION HANDLING
@@ -216,6 +284,17 @@ app.get('/renderEntryField', (req, res) => {
 
     res.render('components/entryfield.ejs', {
         type, name, id, width, value
+    });
+});
+
+app.post('/setJSON', (req, res) => {
+    const jsonData = req.body;
+    console.log("YAAA")
+    fs.writeFile(join(__dirname, 'omnisData.json'), JSON.stringify(jsonData, null, 2), (err) => {
+        if (err) {
+            return res.status(500).send('Failed to write data to file.');
+        }
+        res.send('Data has been written to omnisData.json');
     });
 });
 
