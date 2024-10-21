@@ -170,36 +170,6 @@ router.post('/addChampion', checkNotAuthenticated, permissionCheck('championpool
     })
 });
 
-async function getGamesPlayed(riotName, riotTag, modes) {
-    const modeAndJsonArray = [];
-
-    for (const mode of modes) {
-        const url = `https://api.tracker.gg/api/v1/lol/matches/riot/${riotName}%23${riotTag}/aggregated?region=EUW&localOffset=-120&season=2024-01-10T01%3A00%3A00%2B00%3A00&playlist=${mode}`
-        try {
-            const response = await fetch(url);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-
-            const text = await response.text();
-
-            // Check if the response is not empty
-            if (text.trim() === '') {
-                throw new Error('Empty response received from the API');
-            }
-
-            const jsonData = JSON.parse(text);
-            modeAndJsonArray.push([mode, jsonData]);
-        } catch (error) {
-            console.error(`Error occurred while fetching match history for mode '${mode}':`, error);
-            // If an error occurs, push an array with mode and null to indicate failure
-            modeAndJsonArray.push([mode, null]);
-        }
-    }
-
-    return modeAndJsonArray;
-}
 
 /**
  * Fetches the match history of a user from the tracker.gg API for a specific mode and a specific amount of days.
