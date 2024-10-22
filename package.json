@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/GenZHAW/GNX_Webapp#readme",
   "dependencies": {
-    "axios": "^1.5.0",
+    "axios": "^1.6.0",
     "bcrypt": "^5.1.0",
     "body-parser": "^1.20.2",
     "bootstrap": "^5.2.3",
