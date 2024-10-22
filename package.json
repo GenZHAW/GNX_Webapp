@@ -50,7 +50,7 @@
     "request": "^2.88.2",
     "rimraf": "^5.0.1",
     "riot-games-api-nodejs": "^1.0.7",
-    "sharp": "^0.32.4",
+    "sharp": "^0.32.6",
     "swiper": "^10.0.3",
     "twit": "^1.1.20",
     "typescript": "^5.1.6",
